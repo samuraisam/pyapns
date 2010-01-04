@@ -1,0 +1,8 @@
+build/**
+*.pbxuser
+*.perspectivev3
+*.mode1v3
+.svn
+.cvs
+.DS_Store
+.pyc
