@@ -1,6 +1,6 @@
 Metadata-Version: 1.1
 Name: pyapns
-Version: 0.2
+Version: 0.2.4
 Summary: A universal Apple Push Notification Service (APNS) provider.
 Home-page: http://github.com/samuraisam/pyapns/tree/master
 Author: Samuel Sutch
@@ -57,9 +57,7 @@ Description:
         performing batched notifications, the token and notification arrays must be
         exactly the same length.
         
-        The full notification dictionary must be included as the notification:
-        
-        ::
+        The full notification dictionary must be included as the notification::
         
         {'aps': {
         'sound': 'flynn.caf',
@@ -77,7 +75,8 @@ Description:
         XML-RPC Methods
         ---------------
         
-        **``provision``**
+        ``provision``
+        -------------
         
         ::
         
@@ -91,7 +90,8 @@ Description:
         Returns
         None
         
-        **``notify``**
+        ``notify``
+        ----------
         
         ::
         
@@ -107,7 +107,8 @@ Description:
         Returns
         None
         
-        **``feedback``**
+        ``feedback``
+        ------------
         
         ::
         
@@ -143,7 +144,8 @@ Description:
         
         pyapns_host = http://localhost:8077/
         
-        **``pyapns.client.configure(opts)``**
+        ``pyapns.client.configure(opts)``
+        ---------------------------------
         
         ::
         
@@ -156,7 +158,8 @@ Description:
         INITIAL     - A List of tuples to be supplied to provision when
         the first configuration happens.
         
-        **``pyapns.client.provision(app_id, path_to_cert_or_cert, environment, callback=None)``**
+        ``pyapns.client.provision(app_id, path_to_cert_or_cert, environment, callback=None)``
+        -------------------------------------------------------------------------------------
         
         ::
         
@@ -174,7 +177,8 @@ Description:
         Returns:
         None
         
-        **``pyapns.client.notify(app_id, tokens, notifications, callback=None)``**
+        ``pyapns.client.notify(app_id, tokens, notifications, callback=None)``
+        ----------------------------------------------------------------------
         
         ::
         
@@ -191,7 +195,8 @@ Description:
         Returns:
         None
         
-        **``pyapns.client.feedback(app_id, callback=None)``**
+        ``pyapns.client.feedback(app_id, callback=None)``
+        -------------------------------------------------
         
         ::
         

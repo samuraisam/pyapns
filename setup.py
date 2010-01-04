@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
   name="pyapns",
-  version="0.2",
+  version="0.2.4",
   description="A universal Apple Push Notification Service (APNS) provider.",
   long_description="""
 Features:
@@ -59,9 +59,7 @@ for better performance by using paired arrays of token/notifications. When
 performing batched notifications, the token and notification arrays must be 
 exactly the same length.
 
-The full notification dictionary must be included as the notification:
-
-::
+The full notification dictionary must be included as the notification::
 
     {'aps': {
         'sound': 'flynn.caf',
@@ -79,7 +77,8 @@ lists with a `Datetime` object and the token string.
 XML-RPC Methods
 ---------------
 
-**``provision``**
+``provision``
+-------------
 
 ::
 
@@ -93,7 +92,8 @@ XML-RPC Methods
       Returns
           None
 
-**``notify``**
+``notify``
+----------
 
 ::
 
@@ -109,7 +109,8 @@ XML-RPC Methods
       Returns
           None
 
-**``feedback``**
+``feedback``
+------------
 
 ::
 
@@ -145,7 +146,8 @@ possible, in your configuration file include::
 
     pyapns_host = http://localhost:8077/
 
-**``pyapns.client.configure(opts)``**
+``pyapns.client.configure(opts)``
+---------------------------------
 
 ::
 
@@ -158,7 +160,8 @@ possible, in your configuration file include::
         INITIAL     - A List of tuples to be supplied to provision when
                       the first configuration happens.
 
-**``pyapns.client.provision(app_id, path_to_cert_or_cert, environment, callback=None)``**
+``pyapns.client.provision(app_id, path_to_cert_or_cert, environment, callback=None)``
+-------------------------------------------------------------------------------------
 
 ::
 
@@ -176,7 +179,8 @@ possible, in your configuration file include::
     Returns:
         None
 
-**``pyapns.client.notify(app_id, tokens, notifications, callback=None)``**
+``pyapns.client.notify(app_id, tokens, notifications, callback=None)``
+----------------------------------------------------------------------
 
 ::
 
@@ -193,7 +197,8 @@ possible, in your configuration file include::
       Returns:
           None
 
-**``pyapns.client.feedback(app_id, callback=None)``**
+``pyapns.client.feedback(app_id, callback=None)``
+-------------------------------------------------
 
 ::
 

@@ -50,9 +50,9 @@ The full notification dictionary must be included as the notification:
 Call `feedback` with the `app_id`. A list of tuples will be retrieved from the APNS server that it deems inactive. These are returned as a list of 2-element lists with a `Datetime` object and the token string.
 
 ### XML-RPC Methods
+These methods can be called on the server you started the server on. Be sure you are not including `/RPC2` in the URL.
 
-
-### `provision`
+### provision
 
       Arguments
           app_id        String            the application id for the provided
@@ -64,7 +64,7 @@ Call `feedback` with the `app_id`. A list of tuples will be retrieved from the A
       Returns
           None
 
-### `notify`
+### notify
 
       Arguments
           app_id        String            the application id to send the
@@ -78,7 +78,7 @@ Call `feedback` with the `app_id`. A list of tuples will be retrieved from the A
       Returns
           None
 
-### `feedback`
+### feedback
 
       Arguments
           app_id        String            the application id to retrieve
