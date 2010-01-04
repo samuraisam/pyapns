@@ -13,13 +13,17 @@ Features:
   <li>Simplified feedback interface</li>
 </ul>
 
-pyapns is an APNS provider that you install on your server and access through XML-RPC. To install you will need Python, [Twisted](http://pypi.python.org/pypi/Twisted) and [pyOpenSSL](http://pypi.python.org/pypi/pyOpenSSL). It's also recommended to install [python-epoll](http://pypi.python.org/pypi/python-epoll/) for best performance. If you like easy_install try:
+pyapns is an APNS provider that you install on your server and access through XML-RPC. To install you will need Python, [Twisted](http://pypi.python.org/pypi/Twisted) and [pyOpenSSL](http://pypi.python.org/pypi/pyOpenSSL). It's also recommended to install [python-epoll](http://pypi.python.org/pypi/python-epoll/) for best performance (if epoll is not available, like on Mac OS X, you may want to use another library, like [py-kqueue](http://pypi.python.org/pypi/py-kqueue/2.0.1)). If you like easy_install try:
 
+    $ sudo easy_install twisted
+    $ sudo easy_install pyOpenSSL # ... omit these two if already installed
     $ sudo easy_install pyapns
     
 pyapns is a service that runs persistently on your machine. To start it:
 
     $ twistd web --class=pyapns.server.APNSServer --port=7077 --reactor=epoll
+
+This will create a `twistd.pid` file in your current directory that can be used to kill the process.
 
 To get started right away, use the included client:
 
