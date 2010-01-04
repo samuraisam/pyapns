@@ -108,6 +108,12 @@ Configuring for pylons is just as simple, but automatic provisioning isn't possi
 
     pyapns_host = http://localhost:8077/
 
+Each of these functions can be called synchronously and asynchronously. To make them perform asynchronously simply supply a callback. The request will then be made in another thread and callback with the results. When calling asynchronously no value will be returned.
+
+    def got_feedback(tuples):
+      trim_inactive_tokens(tuples)
+    feedback('myapp', callback=got_feedback)
+
 ### `pyapns.client.configure(opts)`
 
     Takes a dictionary of options and configures the client. 

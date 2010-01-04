@@ -21,8 +21,12 @@ Features:
 
 pyapns is an APNS provider that you install on your server and access through XML-RPC.
 To install you will need Python, Twisted_ and pyOpenSSL_. It's also recommended to 
-install `python-epoll`_ for best performance. If you like easy_install try::
+install `python-epoll`_ for best performance (if epoll is not available, like on 
+Mac OS X, you may want to use another library, like `py-kqueue`_. If you like
+easy_install try::
 
+    $ sudo easy_install twisted
+    $ sudo easy_install pyOpenSSL # ... omit these two if already installed
     $ sudo easy_install pyapns
 
 pyapns is a service that runs persistently on your machine. To start it::
@@ -146,6 +150,15 @@ possible, in your configuration file include::
 
     pyapns_host = http://localhost:8077/
 
+Each of these functions can be called synchronously and asynchronously. To make 
+them perform asynchronously simply supply a callback. The request will then be
+made in another thread and callback with the results. When calling asynchronously 
+no value will be returned::
+
+    def got_feedback(tuples):
+      trim_inactive_tokens(tuples)
+    feedback('myapp', callback=got_feedback)
+
 ``pyapns.client.configure(opts)``
 ---------------------------------
 
@@ -213,6 +226,7 @@ possible, in your configuration file include::
 .. _Twisted: http://pypi.python.org/pypi/Twisted
 .. _pyOpenSSL: http://pypi.python.org/pypi/pyOpenSSL
 .. _python-epoll: http://pypi.python.org/pypi/python-epoll/
+.. _py-kqueue: http://pypi.python.org/pypi/py-kqueue/2.0.1
 
 """,
   author="Samuel Sutch",
