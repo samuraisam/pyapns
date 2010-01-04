@@ -1,0 +1,12 @@
+COPYING
+MANIFEST.in
+README.md
+setup.py
+pyapns/__init__.py
+pyapns/_json.py
+pyapns/client.py
+pyapns/server.py
+pyapns.egg-info/PKG-INFO
+pyapns.egg-info/SOURCES.txt
+pyapns.egg-info/dependency_links.txt
+pyapns.egg-info/top_level.txt
