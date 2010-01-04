@@ -51,7 +51,8 @@ Call `feedback` with the `app_id`. A list of tuples will be retrieved from the A
 
 ### XML-RPC Methods
 
-#### `provision`
+
+### `provision`
 
       Arguments
           app_id        String            the application id for the provided
@@ -63,7 +64,7 @@ Call `feedback` with the `app_id`. A list of tuples will be retrieved from the A
       Returns
           None
 
-#### `notify`
+### `notify`
 
       Arguments
           app_id        String            the application id to send the
@@ -77,7 +78,7 @@ Call `feedback` with the `app_id`. A list of tuples will be retrieved from the A
       Returns
           None
 
-#### `feedback`
+### `feedback`
 
       Arguments
           app_id        String            the application id to retrieve
@@ -103,7 +104,7 @@ Configuring for pylons is just as simple, but automatic provisioning isn't possi
 
     pyapns_host = http://localhost:8077/
 
-#### `pyapns.client.configure(opts)`
+### `pyapns.client.configure(opts)`
 
     Takes a dictionary of options and configures the client. 
     Currently configurable options are 'HOST' and 'INITIAL' the latter
@@ -114,7 +115,7 @@ Configuring for pylons is just as simple, but automatic provisioning isn't possi
         INITIAL     - A List of tuples to be supplied to provision when
                       the first configuration happens.
 
-#### `pyapns.client.provision(app_id, path_to_cert_or_cert, environment, callback=None)`
+### `pyapns.client.provision(app_id, path_to_cert_or_cert, environment, callback=None)`
 
     Provisions the app_id and initializes a connection to the APNS server.
     Multiple calls to this function will be ignored by the pyapns daemon
@@ -130,7 +131,7 @@ Configuring for pylons is just as simple, but automatic provisioning isn't possi
     Returns:
         None
 
-#### `pyapns.client.notify(app_id, tokens, notifications, callback=None)`
+### `pyapns.client.notify(app_id, tokens, notifications, callback=None)`
 
     Sends push notifications to the APNS server. Multiple 
     notifications can be sent by sending pairing the token/notification
@@ -145,7 +146,7 @@ Configuring for pylons is just as simple, but automatic provisioning isn't possi
       Returns:
           None
 
-#### `pyapns.client.feedback(app_id, callback=None)`
+### `pyapns.client.feedback(app_id, callback=None)`
 
     Retrieves a list of inactive tokens from the APNS server and the times
     it thinks they went inactive.
