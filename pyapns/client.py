@@ -40,8 +40,8 @@ class UnknownAppID(Exception): pass
 class APNSNotConfigured(Exception): pass
 
 
-def provision(app_id, path_to_cert, environment, callback=None):
-  args = [app_id, path_to_cert, environment]
+def provision(app_id, path_to_cert, environment, timeout=15, callback=None):
+  args = [app_id, path_to_cert, environment, timeout]
   if callback is None:
     return _xmlrpc_thread('provision', args, lambda r: r)
   t = threading.Thread(target=_xmlrpc_thread, args=['provision', args, callback])
