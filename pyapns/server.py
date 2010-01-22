@@ -5,7 +5,7 @@ import struct
 import logging
 import binascii
 import datetime
-from cStringIO import StringIO
+from StringIO import StringIO as _StringIO
 from OpenSSL import SSL, crypto
 from twisted.internet import reactor, defer
 from twisted.internet.protocol import (
@@ -27,6 +27,18 @@ FEEDBACK_SERVER_PORT = 2196
 
 app_ids = {} # {'app_id': APNSService()}
 
+class StringIO(_StringIO):
+  """Add context management protocol to StringIO
+      ie: http://bugs.python.org/issue1286
+  """
+  
+  def __enter__(self):
+    if self.closed:
+      raise ValueError('I/O operation on closed file')
+    return self
+  
+  def __exit__(self, exc, value, tb):
+    self.close()
 
 class IAPNSService(Interface):
     """ Interface for APNS """
