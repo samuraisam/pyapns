@@ -222,6 +222,16 @@ class APNSService(service.Service):
       context = self.getContextFactory()
       reactor.connectSSL(server, port, factory, context)
       factory.deferred.addErrback(log_errback('apns-feedback-read'))
+      
+      timeout = reactor.callLater(self.timeout,
+        lambda: factory.deferred.called or factory.deferred.errback(
+          Exception('Feedbcak fetch timed out after %i seconds' % self.timeout)))
+      def cancel_timeout(r):
+        try: timeout.cancel()
+        except: pass
+        return r
+      
+      factory.deferred.addBoth(cancel_timeout)
     except Exception, e:
       log.err('APNService feedback error initializing: %s' % str(e))
       raise
