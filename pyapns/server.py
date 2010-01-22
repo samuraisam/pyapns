@@ -166,6 +166,7 @@ class APNSService(service.Service):
   """ A Service that sends notifications and receives 
   feedback from the Apple Push Notification Service
   """
+  
   implements(IAPNSService)
   clientProtocolFactory = APNSClientFactory
   feedbackProtocolFactory = APNSFeedbackClientFactory
@@ -176,6 +177,7 @@ class APNSService(service.Service):
     self.environment = environment
     self.cert_path = cert_path
     self.raw_mode = False
+    self.timeout = 15
   
   def getContextFactory(self):
     return APNSClientContextFactory(self.cert_path)
@@ -194,10 +196,19 @@ class APNSService(service.Service):
     client = self.factory.clientProtocol
     if client:
       return client.sendMessage(notifications)
-    else:
+    else:      
       d = self.factory.deferred
+      timeout = reactor.callLater(self.timeout, 
+        lambda: d.called or d.errback(
+          Exception('Notification timed out after %i seconds' % self.timeout)))
+      def cancel_timeout(r):
+        try: timeout.cancel()
+        except: pass
+        del timeout
+        return r
       d.addCallback(lambda p: p.sendMessage(notifications))
       d.addErrback(log_errback('apns-service-write'))
+      d.addBoth(cancel_timeout)
       return d
   
   def read(self):
@@ -238,11 +249,11 @@ class APNSServer(xmlrpc.XMLRPC):
       Returns:
           None
     """
+    
     if environment not in ('sandbox', 'production'):
       raise xmlrpc.Fault(401, 'Invalid environment provided %s. Valid '
                               'environments are `sandbox` and `production`' % (
                               environment,))
-    
     if not app_id in self.app_ids:
       self.app_ids[app_id] = APNSService(path_to_cert_or_cert, environment)
   
@@ -259,12 +270,20 @@ class APNSServer(xmlrpc.XMLRPC):
           None
     """
     
-    self.apns_service(app_id).write(
+    d = self.apns_service(app_id).write(
       encode_notifications(
         [t.replace(' ', '') for t in token_or_token_list] 
           if (type(token_or_token_list) is list)
           else token_or_token_list.replace(' ', ''),
         aps_dict_or_list))
+    if d:
+      def _finish_err(r):
+        # so far, the only error that could really become of this
+        # request is a timeout, since APNS simply terminates connectons
+        # that are made unsuccessfully, which twisted will try endlessly
+        # to reconnect to, we timeout and notifify the client
+        raise xmlrpc.Fault(500, 'Connection to the APNS server could not be made.')
+      return d.addCallbacks(lambda r: None, _finish_err)
   
   def xmlrpc_feedback(self, app_id):
     """ Queries the Apple APNS feedback server for inactive app tokens. Returns
