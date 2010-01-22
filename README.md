@@ -97,7 +97,8 @@ pyapns also provides a Python API that makes the use of pyapns even simpler. The
 
     PYAPNS_CONFIG = {
       'HOST': 'http://localhost:8077/',
-      'INITIAL': [                        # OPTIONAL
+      'TIMEOUT': 15,                    # OPTIONAL, host timeout in seconds
+      'INITIAL': [                      # OPTIONAL, see below
         ('craigsfish', '/home/samsutch/craigsfish/apscert.pem', 'sandbox'),
       ]
     }
@@ -107,6 +108,7 @@ Optionally, with Django settings, you can skip manual provisioning by including 
 Configuring for pylons is just as simple, but automatic provisioning isn't possible, in your configuration file include:
 
     pyapns_host = http://localhost:8077/
+    pyapns_timeout = 15
 
 Each of these functions can be called synchronously and asynchronously. To make them perform asynchronously simply supply a callback. The request will then be made in another thread and callback with the results. When calling asynchronously no value will be returned.
 
