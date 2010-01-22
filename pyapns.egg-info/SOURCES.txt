@@ -9,4 +9,5 @@ pyapns/server.py
 pyapns.egg-info/PKG-INFO
 pyapns.egg-info/SOURCES.txt
 pyapns.egg-info/dependency_links.txt
+pyapns.egg-info/requires.txt
 pyapns.egg-info/top_level.txt

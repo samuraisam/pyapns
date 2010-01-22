@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
   name="pyapns",
-  version="0.2.5",
+  version="0.3.0",
   description="A universal Apple Push Notification Service (APNS) provider.",
   long_description="""
 Features:
@@ -22,16 +22,14 @@ Features:
 pyapns is an APNS provider that you install on your server and access through XML-RPC.
 To install you will need Python, Twisted_ and pyOpenSSL_. It's also recommended to 
 install `python-epoll`_ for best performance (if epoll is not available, like on 
-Mac OS X, you may want to use another library, like `py-kqueue`_. If you like
-easy_install try::
+Mac OS X, you may want to use another library, like `py-kqueue`_. If you like 
+easy_install try (it should take care of the dependancies for you)::
 
-    $ sudo easy_install twisted
-    $ sudo easy_install pyOpenSSL # ... omit these two if already installed
     $ sudo easy_install pyapns
 
 pyapns is a service that runs persistently on your machine. To start it::
 
-    $ twistd web --class=pyapns.server.APNSServer --port=7077 --reactor=epoll
+    $ twistd -r epoll web --class=pyapns.server.APNSServer --port=7077
 
 To get started right away, use the included client::
 
@@ -43,15 +41,17 @@ To get started right away, use the included client::
 
 The Multi-Application Model
 ---------------------------
-pyapns supports multiple applications. Before pyapns can send notifications, 
-you must first provision the application with an Application ID, the environment 
-(either 'sandbox' or 'production') and the certificate file. The ``provision`` 
-method takes 3 arguments, ``app_id``, ``path_to_cert_or_cert``, and ``environment``. 
-A connection is kept alive for each application provisioned for the fastest 
-service possible. The application ID is an arbitrary identifier and is not 
-used in communication with the APNS servers.
+pyapns supports multiple applications. Before pyapns can send notifications,
+you must first provision the application with an Application ID, the environment
+(either 'sandbox' or 'production') and the certificate file. The `provision`
+method takes 4 arguments, `app_id`, `path_to_cert_or_cert`, `environment`
+and `timeout`. A connection is kept alive for each application provisioned
+for the fastest service possible. The application ID is an arbitrary
+identifier and is not used in communication with the APNS servers.
 
-Attempts to provision the same application id multiple times are ignored.
+When a connection can not be made within the specified `timeout` a timeout 
+error will be thrown by the server. This usually indicates that the wrong 
+[type of] certification file is being used, a blocked port or the wrong environment.
 
 Sending Notifications
 ---------------------
@@ -93,6 +93,8 @@ XML-RPC Methods
                                           string with the entie file
           environment   String            the APNS server to use - either
                                           'production' or 'sandbox'
+          timeout       Integer           timeout for connection attempts to
+                                          the APS servers
       Returns
           None
 
@@ -136,7 +138,8 @@ your settings file::
 
     PYAPNS_CONFIG = {
       'HOST': 'http://localhost:8077/',
-      'INITIAL': [                        # OPTIONAL
+      'TIMEOUT': 15,                    # OPTIONAL, host timeout in seconds
+      'INITIAL': [                      # OPTIONAL, see below
         ('craigsfish', '/home/samsutch/craigsfish/apscert.pem', 'sandbox'),
       ]
     }
@@ -149,6 +152,10 @@ Configuring for pylons is just as simple, but automatic provisioning isn't
 possible, in your configuration file include::
 
     pyapns_host = http://localhost:8077/
+    pyapns_timeout = 15
+
+For explanations of the configuration variables see the docs for 
+`pyapns.client.configure`.
 
 Each of these functions can be called synchronously and asynchronously. To make 
 them perform asynchronously simply supply a callback. The request will then be
@@ -165,16 +172,19 @@ no value will be returned::
 ::
 
     Takes a dictionary of options and configures the client. 
-    Currently configurable options are 'HOST' and 'INITIAL' the latter
+    Currently configurable options are 'HOST', 'TIMEOUT' and 'INITIAL' the latter
     of which is only read once.
 
     Config Options:
         HOST        - A full host name with port, ending with a forward slash
+        TIMEOUT     - An integer specifying how many seconds to timeout a
+                      connection to the pyapns server (prevents deadlocking
+                      the parent thread).
         INITIAL     - A List of tuples to be supplied to provision when
                       the first configuration happens.
 
-``pyapns.client.provision(app_id, path_to_cert_or_cert, environment, callback=None)``
--------------------------------------------------------------------------------------
+``pyapns.client.provision(app_id, path_to_cert_or_cert, environment, timeout=15, callback=None)``
+-------------------------------------------------------------------------------------------------
 
 ::
 
@@ -188,6 +198,8 @@ no value will be returned::
         path_to_cert_or_cert   absolute path to the APNS SSL cert or a 
                                string containing the .pem file
         environment            either 'sandbox' or 'production'
+        timeout                number of seconds to timeout connection
+                               attempts to the APPLE APS SERVER
         callback               a callback to be executed when done
     Returns:
         None
