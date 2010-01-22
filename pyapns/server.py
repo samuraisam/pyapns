@@ -99,7 +99,7 @@ class APNSFeedbackClientFactory(ClientFactory):
     p = self.protocol()
     p.factory = self
     p.deferred = self.deferred
-    p.io = StringIO
+    p.io = StringIO()
     p.setRawMode()
     return p
   
