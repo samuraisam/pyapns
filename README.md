@@ -13,17 +13,15 @@ Features:
   <li>Simplified feedback interface</li>
 </ul>
 
-pyapns is an APNS provider that you install on your server and access through XML-RPC. To install you will need Python, [Twisted](http://pypi.python.org/pypi/Twisted) and [pyOpenSSL](http://pypi.python.org/pypi/pyOpenSSL). It's also recommended to install [python-epoll](http://pypi.python.org/pypi/python-epoll/) for best performance (if epoll is not available, like on Mac OS X, you may want to use another library, like [py-kqueue](http://pypi.python.org/pypi/py-kqueue/2.0.1)). If you like easy_install try:
+pyapns is an APNS provider that you install on your server and access through XML-RPC. To install you will need Python, [Twisted](http://pypi.python.org/pypi/Twisted) and [pyOpenSSL](http://pypi.python.org/pypi/pyOpenSSL). It's also recommended to install [python-epoll](http://pypi.python.org/pypi/python-epoll/) for best performance (if epoll is not available, like on Mac OS X, you may want to use another library, like [py-kqueue](http://pypi.python.org/pypi/py-kqueue/2.0.1)). If you like easy_install try (it should take care of the dependancies for you):
 
-    $ sudo easy_install twisted
-    $ sudo easy_install pyOpenSSL # ... omit these two if already installed
     $ sudo easy_install pyapns
     
 pyapns is a service that runs persistently on your machine. To start it:
 
-    $ twistd web --class=pyapns.server.APNSServer --port=7077 --reactor=epoll
+    $ twistd -r epoll web --class=pyapns.server.APNSServer --port=7077
 
-This will create a `twistd.pid` file in your current directory that can be used to kill the process.
+This will create a `twistd.pid` file in your current directory that can be used to kill the process. `twistd` is a launcher used for running network persistent network applications. It takes many more options that can be found by running `man twistd` or using a [web man page](http://linux.die.net/man/1/twistd).
 
 To get started right away, use the included client:
 
@@ -34,7 +32,9 @@ To get started right away, use the included client:
     >>> notify('myapp', 'hexlified_token_str', {'aps':{'alert': 'Hello!'}})
 
 ### The Multi-Application Model
-pyapns supports multiple applications. Before pyapns can send notifications, you must first provision the application with an Application ID, the environment (either 'sandbox' or 'production') and the certificate file. The `provision` method takes 3 arguments, `app_id`, `path_to_cert_or_cert`, and `environment`. A connection is kept alive for each application provisioned for the fastest service possible. The application ID is an arbitrary identifier and is not used in communication with the APNS servers.
+pyapns supports multiple applications. Before pyapns can send notifications, you must first provision the application with an Application ID, the environment (either 'sandbox' or 'production') and the certificate file. The `provision` method takes 4 arguments, `app_id`, `path_to_cert_or_cert`, `environment` and `timeout`. A connection is kept alive for each application provisioned for the fastest service possible. The application ID is an arbitrary identifier and is not used in communication with the APNS servers.
+
+When a connection can not be made within the specified `timeout` a timeout error will be thrown by the server. This usually indicates that the wrong [type of] certification file is being used, a blocked port or the wrong environment.
 
 Attempts to provision the same application id multiple times are ignored.
 
@@ -65,6 +65,8 @@ These methods can be called on the server you started the server on. Be sure you
                                           string with the entie file
           environment   String            the APNS server to use - either
                                           'production' or 'sandbox'
+          timeout       Integer           timeout for connection attempts to
+                                          the APS servers
       Returns
           None
 
@@ -110,7 +112,9 @@ Configuring for pylons is just as simple, but automatic provisioning isn't possi
     pyapns_host = http://localhost:8077/
     pyapns_timeout = 15
 
-Each of these functions can be called synchronously and asynchronously. To make them perform asynchronously simply supply a callback. The request will then be made in another thread and callback with the results. When calling asynchronously no value will be returned.
+For explanations of the configuration variables see the docs for `pyapns.client.configure`.
+
+Each of these functions can be called synchronously and asynchronously. To make them perform asynchronously simply supply a callback. The request will then be made in another thread and your callback will be executed with the results. When calling asynchronously no value will be returned:
 
     def got_feedback(tuples):
       trim_inactive_tokens(tuples)
@@ -124,6 +128,9 @@ Each of these functions can be called synchronously and asynchronously. To make 
     
     Config Options:
         HOST        - A full host name with port, ending with a forward slash
+        TIMEOUT     - An integer specifying how many seconds to timeout a
+                      connection to the pyapns server (prevents deadlocking
+                      the parent thread).
         INITIAL     - A List of tuples to be supplied to provision when
                       the first configuration happens.
 
