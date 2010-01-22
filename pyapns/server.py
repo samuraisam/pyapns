@@ -98,7 +98,7 @@ class APNSFeedbackHandler(LineReceiver):
   def connectionLost(self, reason):
     log.msg('feedbackHandler connectionLost %s' % reason)
     self.deferred.callback(self.io.getvalue())
-    io.close()
+    self.io.close()
 
 
 class APNSFeedbackClientFactory(ClientFactory):
