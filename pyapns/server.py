@@ -133,7 +133,7 @@ class APNSClientFactory(ReconnectingClientFactory):
   def __init__(self):
     self.clientProtocol = None
     self.deferred = defer.Deferred()
-    self.deferred.addErrback(log_errback('APNSClientFactory__init__'))
+    self.deferred.addErrback(log_errback('APNSClientFactory __init__'))
   
   def addClient(self, p):
     self.clientProtocol = p
@@ -142,7 +142,7 @@ class APNSClientFactory(ReconnectingClientFactory):
   def removeClient(self, p):
     self.clientProtocol = None
     self.deferred = defer.Deferred()
-    self.deferred.addErrback(log_errback('APNSClientFactoryremoveClient'))
+    self.deferred.addErrback(log_errback('APNSClientFactory removeClient'))
   
   def startedConnecting(self, connector):
     log.msg('APNSClientFactory startedConnecting')
