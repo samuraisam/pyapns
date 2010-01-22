@@ -1,0 +1,256 @@
+<html>
+  <head>
+    <title>pyapns - a APNS provider for your app</title>
+    <style type="text/css">
+      #content { width: 1024px; margin-left: auto; margin-bottom: 0px; margin-right: auto; margin-top: 0px; background-repeat: x repeat-y; background-image: url(images/background.png);}
+      #sidebar {margin-right: 40px; float: right; width: 257px;}
+      #visit-github {padding: 0px; margin: 0px; display: block; height: 65px; width: 256px; background-image: url(images/visit-github.png);}
+      #visit-pypi {display: block; padding: 0px; margin: 0px; height: 85px; width: 256px; background-image: url(images/install-python.png);}
+      #visit-osi {display: block; padding: 0px; margin: 0px; height: 70px; width: 256px; background-image: url(images/free-software.png);}
+      #content-wrapper {float: left; margin-left: 40px; width: 687px;}
+      #header {color: clear; background-image: url(images/header.png); height: 155px; width: 687px;}
+      #readme {color: #1c1c1c; text-shadow: 0px -1px 1px #f9f9f9; width: 590px; margin: 0 auto;}
+      #copyright {text-shadow: 0px -1px 1px black; text-align: center; font-size: 10px; color: #e3e3e3;}
+      body {font-size: 12px; font-family: "Lucida Grande", Verdana, Arial, sans-serif; padding: 0px; margin: 0px; background-color: #3d3d3d;}
+      pre { padding-right: 0px; padding-left: 12px; padding-bottom: 4px; padding-top: 4px; background-color: #d2e8ed;}
+      pre.ignore {background-color:#ebebeb;}
+      #tip {display:none; background:transparent url(images/white.png); font-size:12px; height:59px; width:159px; padding:25px; color:#000;}
+      .recent-commits {font-size:10px; color: #ebebeb;}
+			.recent-commits ul {list-style:none; margin: 0; padding: 0;}
+			.recent-commits ul li {margin: 10 0 0 0;}
+			.recent-commits ul li a, .recent-commits ul li a:hover, .recent-commits ul li a:visited, .recent-commits ul li a:active {
+				color: #aeaeae; padding-left: 12px; padding-right: 12px; font-weight: bold; display: block;
+			}
+			.recent-commits ul li pre {
+			  background-color: inherit !important;
+				white-space: pre-wrap; /* css-3 */
+				white-space: -moz-pre-wrap !important; /* Mozilla, since 1999 */
+				white-space: -pre-wrap; /* Opera 4-6 */
+				white-space: -o-pre-wrap; /* Opera 7 */
+				word-wrap: break-word; /* Internet Explorer 5.5+ */
+			}
+			#sidebar h3 {margin-left: 12px; color: #aeaeae;}
+    </style>
+    <link href="prettify.css" type="text/css" rel="stylesheet" />
+    <script type="text/javascript" src="prettify.js"></script>
+    <script src="jquery.tools.min.js"></script>
+    <script>
+    $(document).ready(function() {
+      $('#sidebar a[title]').tooltip({tip: '#tip', effect: 'slide', position: 'center left', direction: 'left', offset: [30, 30]});
+      var url = "http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&callback=?&q=http://github.com/feeds/samuraisam/commits/pyapns/master&num=15";
+      $.getJSON(url, function(data) {
+      	var first_shit = '<div class="recent-commits"><ul>';
+      	var inside_shit = '';
+      	var outside_shit = '</ul></div>';
+      	var entries = data.responseData.feed.entries;
+      	for (var i = 0; i < entries.length; i++) {
+      		inside_shit += ('<li><a href="' + entries[i].link + '">' + entries[i].title + '</a><p>' + entries[i].content + '</p>');
+      	}
+      	$("#feed-content").append(first_shit+inside_shit+outside_shit);
+      });
+    });
+    </script>
+  </head>
+  <body onload="prettyPrint()">
+  <div id="content">
+  <div id="sidebar">
+  <a href="http://pypi.python.org/pypi/pyapns" id="visit-pypi" title="Download version 0.2.5 from the Python Packaging Index (all  you need is Python 2.6 to get started)"></a>
+  <a href="http://github.com/samuraisam/pyapns" id="visit-github" title="Visit the github page and follow our project, submit a bug or create a fork of your own"></a>
+  <a href="http://www.opensource.org/licenses/mit-license.php" title="Read the awesome MIT license which basically says do whatever you want 'cept sue me" id="visit-osi"></a>
+  <div id="tip">&nbsp;</div>
+  <h3>Recent Commits</h3>
+  <div id="feed-content"></div>
+  <p id="copyright">Copyright 2010 Samuel Sutch</p>
+  </div>
+  <div id="content-wrapper">
+    <div id="header">
+    &nbsp;
+    </div>
+    <div id="readme" class="announce"><div class="wikistyle">
+<img src="images/gist-of-things.png" title="how does this thing work?">
+<p>A universal Apple Push Notification Service (APNS) provider.</p>
+
+Features:
+<ul>
+  <li>XML-RPC Based, works with any client in any language</li>
+  <li>Native Python API with Django and Pylons support</li>
+  <li>Scalable, fast and easy to distribute behind a proxy</li>
+  <li>Based on Twisted</li>
+  <li>Multi-application and dual environment support</li>
+  <li>Simplified feedback interface</li>
+</ul>
+
+<p>pyapns is an APNS provider that you install on your server and access through XML-RPC. To install you will need Python, <a href="http://pypi.python.org/pypi/Twisted">Twisted</a> and <a href="http://pypi.python.org/pypi/pyOpenSSL">pyOpenSSL</a>. It's also recommended to install <a href="http://pypi.python.org/pypi/python-epoll/">python-epoll</a> for best performance (if epoll is not available, like on Mac OS X, you may want to use another library, like <a href="http://pypi.python.org/pypi/py-kqueue/2.0.1">py-kqueue</a>). If you like easy_install try:</p>
+
+<pre class="prettyprint lang-bsh"><code>$ sudo easy_install pyapns
+</code></pre>
+
+<p>pyapns is a service that runs persistently on your machine. To start it:</p>
+
+<pre class="prettyprint lang-bsh"><code>$ twistd web --class=pyapns.server.APNSServer --port=7077 --reactor=epoll
+</code></pre>
+
+<p>This will create a <code>twistd.pid</code> file in your current directory that can be used to kill the process.</p>
+
+<p>To get started right away, use the included client:</p>
+
+<pre class="prettyprint lang-python"><code>$ python
+&gt;&gt;&gt; from pyapns import configure, provision, notify
+&gt;&gt;&gt; configure({'HOST': 'http://localhost:7077/'})
+&gt;&gt;&gt; provision('myapp', open('cert.pem').read(), 'sandbox')
+&gt;&gt;&gt; notify('myapp', 'hexlified_token_str', {'aps':{'alert': 'Hello!'}})
+</code></pre>
+
+<h3>The Multi-Application Model</h3>
+
+<p>pyapns supports multiple applications. Before pyapns can send notifications, you must first provision the application with an Application ID, the environment (either 'sandbox' or 'production') and the certificate file. The <code>provision</code> method takes 3 arguments, <code>app_id</code>, <code>path_to_cert_or_cert</code>, and <code>environment</code>. A connection is kept alive for each application provisioned for the fastest service possible. The application ID is an arbitrary identifier and is not used in communication with the APNS servers.</p>
+
+<p>Attempts to provision the same application id multiple times are ignored.</p>
+
+<h3>Sending Notifications</h3>
+
+<p>Calling <code>notify</code> will send the message immediately if a connection is already established. The first notification may be delayed a second while the server connects. <code>notify</code> takes <code>app_id</code>, <code>token_or_token_list</code> and <code>notification_or_notification_list</code>. Multiple notifications can be batched for better performance by using paired arrays of token/notifications. When performing batched notifications, the token and notification arrays must be exactly the same length.</p>
+
+<p>The full notification dictionary must be included as the notification:</p>
+
+<pre class="prettyprint lang-js"><code>{'aps': {
+  'sound': 'flynn.caf',
+  'badge': 0,
+  'message': 'Hello from pyapns :)'
+  }
+} # etc...
+</code></pre>
+
+<h3>Retrieving Inactive Tokens</h3>
+
+<p>Call <code>feedback</code> with the <code>app_id</code>. A list of tuples will be retrieved from the APNS server that it deems inactive. These are returned as a list of 2-element lists with a <code>Datetime</code> object and the token string.</p>
+
+<h3>XML-RPC Methods</h3>
+
+<p>These methods can be called on the server you started the server on. Be sure you are not including <code>/RPC2</code> in the URL.</p>
+
+<h3><code>provision</code></h3>
+
+<pre class="ignore"><code>  Arguments
+    app_id    String        the application id for the provided
+                            certification
+    cert      String        a path to a .pem file or the a
+                            string with the entie file
+    environment String      the APNS server to use - either
+                           'production' or 'sandbox'
+  Returns
+    None
+</code></pre>
+
+<h3><code>notify</code></h3>
+
+<pre class="ignore"><code>  Arguments
+    app_id    String        the application id to send the
+                            message to
+    tokens    Str/Arr       an Array of tokens or a single
+                            token string
+    notifications Str/Arr   an Array of notification
+                            dictionaries or a single
+                            notification dictionary
+
+  Returns
+    None
+</code></pre>
+
+<h3><code>feedback</code></h3>
+
+<pre class="ignore"><code>  Arguments
+    app_id    String        the application id to retrieve
+                            retrieve feedback for
+
+  Returns
+    Array(Array(Datetime(time_expired), String(token)), ...)
+</code></pre>
+
+<h3>The Python API</h3>
+
+<p>pyapns also provides a Python API that makes the use of pyapns even simpler. The Python API must be configured before use but configuration files make it easier. The pyapns <code>client</code> module currently supports configuration from Django settings and Pylons config. To configure using Django, the following must be present in  your settings file:</p>
+
+<pre class="prettyprint lang-py"><code>PYAPNS_CONFIG = {
+  'HOST': 'http://localhost:8077/',
+  'INITIAL': [              # OPTIONAL
+  ('craigsfish', '/home/samsutch/craigsfish/apscert.pem', 'sandbox'),
+  ]
+}
+</code></pre>
+
+<p>Optionally, with Django settings, you can skip manual provisioning by including a list of <code>(name, path, environment)</code> tuples that are guaranteed to be provisioned by the time you call <code>notify</code> or <code>feedback</code>.</p>
+
+<p>Configuring for pylons is just as simple, but automatic provisioning isn't possible, in your configuration file include:</p>
+
+<pre><code>pyapns_host = http://localhost:8077/
+</code></pre>
+
+<p>Each of these functions can be called synchronously and asynchronously. To make them perform asynchronously simply supply a callback. The request will then be made in another thread and callback with the results. When calling asynchronously no value will be returned.</p>
+
+<pre class="prettyprint lang-py"><code>def got_feedback(tuples):
+  trim_inactive_tokens(tuples)
+feedback('myapp', callback=got_feedback)
+</code></pre>
+
+<h3><code>pyapns.client.configure(opts)</code></h3>
+
+<pre class="ignore"><code>Takes a dictionary of options and configures the client. 
+Currently configurable options are 'HOST' and 'INITIAL' the latter
+of which is only read once.
+
+Config Options:
+  HOST      - A full host name with port, ending with a forward slash
+  INITIAL   - A List of tuples to be supplied to provision when
+              the first configuration happens.
+</code></pre>
+
+<h3><code>pyapns.client.provision(app_id, path_to_cert_or_cert, environment, callback=None)</code></h3>
+
+<pre class="ignore"><code>Provisions the app_id and initializes a connection to the APNS server.
+Multiple calls to this function will be ignored by the pyapns daemon
+but are still sent so pick a good place to provision your apps, optimally
+once.
+
+Arguments:
+  app_id                 the app_id to provision for APNS
+  path_to_cert_or_cert   absolute path to the APNS SSL cert or a 
+                         string containing the .pem file
+  environment            either 'sandbox' or 'production'
+  callback               a callback to be executed when done
+Returns:
+  None
+</code></pre>
+
+<h3><code>pyapns.client.notify(app_id, tokens, notifications, callback=None)</code></h3>
+
+<pre class="ignore"><code>Sends push notifications to the APNS server. Multiple 
+notifications can be sent by sending pairing the token/notification
+arguments in lists [token1, token2], [notification1, notification2].
+
+Arguments:
+  app_id           provisioned app_id to send to
+  tokens           token to send the notification or a 
+                   list of tokens
+  notifications    notification dicts or a list of notifications
+  callback         a callback to be executed when done
+Returns:
+    None
+</code></pre>
+
+<h3><code>pyapns.client.feedback(app_id, callback=None)</code></h3>
+
+<pre class="ignore"><code>Retrieves a list of inactive tokens from the APNS server and the times
+it thinks they went inactive.
+
+Arguments:
+  app_id           the app_id to query
+Returns:
+  Feedback tuples like [(datetime_expired, token_str), ...]
+</code></pre>
+</div></div>
+
+</div>
+<div style="clear:both;">&nbsp;</div></div>
+  </body>
+</html>
