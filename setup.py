@@ -244,5 +244,5 @@ no value will be returned::
     'Topic :: Software Development :: Libraries :: Python Modules'],
   packages=['pyapns'],
   package_data={},
-  requires=['Twisted', 'pyOpenSSL']
+  install_requires=['Twisted>=8.2.0', 'pyOpenSSL>=0.10']
   )
