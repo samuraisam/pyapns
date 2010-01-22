@@ -204,8 +204,8 @@ class APNSService(service.Service):
       def cancel_timeout(r):
         try: timeout.cancel()
         except: pass
-        del timeout
         return r
+      
       d.addCallback(lambda p: p.sendMessage(notifications))
       d.addErrback(log_errback('apns-service-write'))
       d.addBoth(cancel_timeout)
