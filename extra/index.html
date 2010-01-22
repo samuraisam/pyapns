@@ -80,17 +80,17 @@ Features:
   <li>Simplified feedback interface</li>
 </ul>
 
-<p>pyapns is an APNS provider that you install on your server and access through XML-RPC. To install you will need Python, <a href="http://pypi.python.org/pypi/Twisted">Twisted</a> and <a href="http://pypi.python.org/pypi/pyOpenSSL">pyOpenSSL</a>. It's also recommended to install <a href="http://pypi.python.org/pypi/python-epoll/">python-epoll</a> for best performance (if epoll is not available, like on Mac OS X, you may want to use another library, like <a href="http://pypi.python.org/pypi/py-kqueue/2.0.1">py-kqueue</a>). If you like easy_install try:</p>
+<p>pyapns is an APNS provider that you install on your server and access through XML-RPC. To install you will need Python, <a href="http://pypi.python.org/pypi/Twisted">Twisted</a> and <a href="http://pypi.python.org/pypi/pyOpenSSL">pyOpenSSL</a>. It's also recommended to install <a href="http://pypi.python.org/pypi/python-epoll/">python-epoll</a> for best performance (if epoll is not available, like on Mac OS X, you may want to use another library, like <a href="http://pypi.python.org/pypi/py-kqueue/2.0.1">py-kqueue</a>). If you like easy_install try (it should take care of the dependancies for you):</p>
 
 <pre class="prettyprint lang-bsh"><code>$ sudo easy_install pyapns
 </code></pre>
 
 <p>pyapns is a service that runs persistently on your machine. To start it:</p>
 
-<pre class="prettyprint lang-bsh"><code>$ twistd web --class=pyapns.server.APNSServer --port=7077 --reactor=epoll
+<pre class="prettyprint lang-bsh"><code>$ twistd -r epoll web --class=pyapns.server.APNSServer --port=7077
 </code></pre>
 
-<p>This will create a <code>twistd.pid</code> file in your current directory that can be used to kill the process.</p>
+<p>This will create a <code>twistd.pid</code> file in your current directory that can be used to kill the process. <code>twistd</code> is a launcher used for running persistent network applications. It takes many more options that can be found by running <code>man twistd</code> or using a <a href="http://linux.die.net/man/1/twistd">web man page</a>.</p>
 
 <p>To get started right away, use the included client:</p>
 
@@ -103,7 +103,9 @@ Features:
 
 <h3>The Multi-Application Model</h3>
 
-<p>pyapns supports multiple applications. Before pyapns can send notifications, you must first provision the application with an Application ID, the environment (either 'sandbox' or 'production') and the certificate file. The <code>provision</code> method takes 3 arguments, <code>app_id</code>, <code>path_to_cert_or_cert</code>, and <code>environment</code>. A connection is kept alive for each application provisioned for the fastest service possible. The application ID is an arbitrary identifier and is not used in communication with the APNS servers.</p>
+<p>pyapns supports multiple applications. Before pyapns can send notifications, you must first provision the application with an Application ID, the environment (either 'sandbox' or 'production') and the certificate file. The <code>provision</code> method takes 4 arguments, <code>app_id</code>, <code>path_to_cert_or_cert</code>, <code>environment</code> and <code>timeout</code>. A connection is kept alive for each application provisioned for the fastest service possible. The application ID is an arbitrary identifier and is not used in communication with the APNS servers.</p>
+
+<p>When a connection can not be made within the specified <code>timeout</code> a timeout error will be thrown by the server. This usually indicates that the wrong [type of] certification file is being used, a blocked port or the wrong environment.</p>
 
 <p>Attempts to provision the same application id multiple times are ignored.</p>
 
@@ -152,6 +154,8 @@ Features:
     notifications Str/Arr   an Array of notification
                             dictionaries or a single
                             notification dictionary
+    timeout   Integer       timeout for connection attempts to
+                            the APS servers
 
   Returns
     None
@@ -173,8 +177,9 @@ Features:
 
 <pre class="prettyprint lang-py"><code>PYAPNS_CONFIG = {
   'HOST': 'http://localhost:8077/',
-  'INITIAL': [              # OPTIONAL
-  ('craigsfish', '/home/samsutch/craigsfish/apscert.pem', 'sandbox'),
+  'TIMEOUT': 15,                    # OPTIONAL, host timeout in seconds
+  'INITIAL': [                      # OPTIONAL, see below
+    ('craigsfish', '/home/samsutch/craigsfish/apscert.pem', 'sandbox'),
   ]
 }
 </code></pre>
@@ -184,9 +189,12 @@ Features:
 <p>Configuring for pylons is just as simple, but automatic provisioning isn't possible, in your configuration file include:</p>
 
 <pre><code>pyapns_host = http://localhost:8077/
+pyapns_timeout = 15
 </code></pre>
 
-<p>Each of these functions can be called synchronously and asynchronously. To make them perform asynchronously simply supply a callback. The request will then be made in another thread and callback with the results. When calling asynchronously no value will be returned.</p>
+<p>For explanations of the configuration variables see the docs for <code>pyapns.client.configure</code>.</p>
+
+<p>Each of these functions can be called synchronously and asynchronously. To make them perform asynchronously simply supply a callback. The request will then be made in another thread and your callback will be executed with the results. When calling asynchronously no value will be returned:</p>
 
 <pre class="prettyprint lang-py"><code>def got_feedback(tuples):
   trim_inactive_tokens(tuples)
@@ -201,11 +209,14 @@ of which is only read once.
 
 Config Options:
   HOST      - A full host name with port, ending with a forward slash
+  TIMEOUT   - An integer specifying how many seconds to timeout a
+              connection to the pyapns server (prevents deadlocking
+              the parent thread).
   INITIAL   - A List of tuples to be supplied to provision when
               the first configuration happens.
 </code></pre>
 
-<h3><code>pyapns.client.provision(app_id, path_to_cert_or_cert, environment, callback=None)</code></h3>
+<h3><code>pyapns.client.provision(app_id, path_to_cert_or_cert, environment, timeout=15, callback=None)</code></h3>
 
 <pre class="ignore"><code>Provisions the app_id and initializes a connection to the APNS server.
 Multiple calls to this function will be ignored by the pyapns daemon
@@ -217,6 +228,8 @@ Arguments:
   path_to_cert_or_cert   absolute path to the APNS SSL cert or a 
                          string containing the .pem file
   environment            either 'sandbox' or 'production'
+  timeout                number of seconds to timeout connection
+                         attempts to the APPLE APS SERVER
   callback               a callback to be executed when done
 Returns:
   None
