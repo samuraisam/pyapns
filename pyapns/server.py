@@ -171,13 +171,13 @@ class APNSService(service.Service):
   clientProtocolFactory = APNSClientFactory
   feedbackProtocolFactory = APNSFeedbackClientFactory
   
-  def __init__(self, cert_path, environment):
+  def __init__(self, cert_path, environment, timeout=15):
     log.msg('APNSService __init__')
     self.factory = None
     self.environment = environment
     self.cert_path = cert_path
     self.raw_mode = False
-    self.timeout = 15
+    self.timeout = timeout
   
   def getContextFactory(self):
     return APNSClientContextFactory(self.cert_path)
@@ -238,7 +238,7 @@ class APNSServer(xmlrpc.XMLRPC):
       raise xmlrpc.Fault(404, 'The app_id specified has not been provisioned.')
     return self.app_ids[app_id]
   
-  def xmlrpc_provision(self, app_id, path_to_cert_or_cert, environment):
+  def xmlrpc_provision(self, app_id, path_to_cert_or_cert, environment, timeout=15):
     """ Starts an APNSService for the this app_id and keeps it running
     
       Arguments:
@@ -246,6 +246,8 @@ class APNSServer(xmlrpc.XMLRPC):
           path_to_cert_or_cert   absolute path to the APNS SSL cert or a 
                                  string containing the .pem file
           environment            either 'sandbox' or 'production'
+          timeout                seconds to timeout connection attempts
+                                 to the APNS server
       Returns:
           None
     """
@@ -255,7 +257,7 @@ class APNSServer(xmlrpc.XMLRPC):
                               'environments are `sandbox` and `production`' % (
                               environment,))
     if not app_id in self.app_ids:
-      self.app_ids[app_id] = APNSService(path_to_cert_or_cert, environment)
+      self.app_ids[app_id] = APNSService(path_to_cert_or_cert, environment, timeout)
   
   def xmlrpc_notify(self, app_id, token_or_token_list, aps_dict_or_list):
     """ Sends push notifications to the Apple APNS server. Multiple 
