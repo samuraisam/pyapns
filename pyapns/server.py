@@ -120,11 +120,11 @@ class APNSFeedbackClientFactory(ClientFactory):
   
   def clientConnectionLost(self, connector, reason):
     log.msg('APNSFeedbackClientFactory clientConnectionLost reason=%s' % reason)
-    ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
+    ClientFactory.clientConnectionLost(self, connector, reason)
   
   def clientConnectionFailed(self, connector, reason):
     log.msg('APNSFeedbackClientFactory clientConnectionFailed reason=%s' % reason)
-    ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
+    ClientFactory.clientConnectionLost(self, connector, reason)
 
 
 class APNSClientFactory(ReconnectingClientFactory):
