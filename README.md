@@ -123,8 +123,8 @@ Each of these functions can be called synchronously and asynchronously. To make 
 ### `pyapns.client.configure(opts)`
 
     Takes a dictionary of options and configures the client. 
-    Currently configurable options are 'HOST' and 'INITIAL' the latter
-    of which is only read once.
+    Currently configurable options are 'HOST', 'TIMEOUT' and 'INITIAL' 
+    the latter of which is only read once.
     
     Config Options:
         HOST        - A full host name with port, ending with a forward slash
@@ -134,7 +134,7 @@ Each of these functions can be called synchronously and asynchronously. To make 
         INITIAL     - A List of tuples to be supplied to provision when
                       the first configuration happens.
 
-### `pyapns.client.provision(app_id, path_to_cert_or_cert, environment, callback=None)`
+### `pyapns.client.provision(app_id, path_to_cert_or_cert, environment, timeout=15, callback=None)`
 
     Provisions the app_id and initializes a connection to the APNS server.
     Multiple calls to this function will be ignored by the pyapns daemon
@@ -146,6 +146,8 @@ Each of these functions can be called synchronously and asynchronously. To make 
         path_to_cert_or_cert   absolute path to the APNS SSL cert or a 
                                string containing the .pem file
         environment            either 'sandbox' or 'production'
+        timeout                number of seconds to timeout connection
+                               attempts to the APPLE APS SERVER
         callback               a callback to be executed when done
     Returns:
         None
