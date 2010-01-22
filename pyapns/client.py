@@ -1,7 +1,8 @@
 import xmlrpclib
 import threading
+import httplib
 
-OPTIONS = {'CONFIGURED': False}
+OPTIONS = {'CONFIGURED': False, 'TIMEOUT': 20}
 
 def configure(opts):
   if not OPTIONS['CONFIGURED']:
@@ -62,7 +63,8 @@ def feedback(app_id, callback=None):
 def _xmlrpc_thread(method, args, callback):
   if not configure({}):
     raise APNSNotConfigured('APNS Has not been configured.')
-  proxy = xmlrpclib.ServerProxy(OPTIONS['HOST'], allow_none=True, use_datetime=True)
+  proxy = ServerProxy(OPTIONS['HOST'], allow_none=True, use_datetime=True,
+                      timeout=OPTIONS['TIMEOUT'])
   try:
     parts = method.strip().split('.')
     for part in parts:
@@ -73,3 +75,32 @@ def _xmlrpc_thread(method, args, callback):
       raise UnknownAppID
     raise
 
+
+## --------------------------------------------------------------
+## Thank you Volodymyr Orlenko:
+## http://blog.bjola.ca/2007/08/using-timeout-with-xmlrpclib.html
+## --------------------------------------------------------------
+
+def ServerProxy(url, *args, **kwargs):
+  t = TimeoutTransport()
+  t.timeout = kwargs.pop('timeout', 20)
+  kwargs['transport'] = t
+  return xmlrpclib.ServerProxy(url, *args, **kwargs)
+
+class TimeoutTransport(xmlrpclib.Transport):
+  def make_connection(self, host):
+    conn = TimeoutHTTP(host)
+    conn.set_timeout(self.timeout)
+    return conn
+
+class TimeoutHTTPConnection(httplib.HTTPConnection):
+  def connect(self):
+    httplib.HTTPConnection.connect(self)
+    self.sock.settimeout(self.timeout)
+  
+class TimeoutHTTP(httplib.HTTP):
+  _connection_class = TimeoutHTTPConnection
+  
+  def set_timeout(self, timeout):
+    self._conn.timeout = timeout
+  
