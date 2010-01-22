@@ -253,7 +253,7 @@ class APNSServer(xmlrpc.XMLRPC):
     """
     
     if environment not in ('sandbox', 'production'):
-      raise xmlrpc.Fault(401, 'Invalid environment provided %s. Valid '
+      raise xmlrpc.Fault(401, 'Invalid environment provided `%s`. Valid '
                               'environments are `sandbox` and `production`' % (
                               environment,))
     if not app_id in self.app_ids:
