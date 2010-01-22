@@ -22,6 +22,10 @@ def configure(opts):
       try: # pylons support
         import pylons.config
         OPTIONS.update({'HOST': pylons.config.get('pyapns_host')})
+        try:
+          OPTIONS.update({'TIMEOUT': int(pylons.config.get('pyapns_timeout'))})
+        except:
+          pass # ignore, an optional value
         OPTIONS['CONFIGURED'] = True
       except:
         pass
