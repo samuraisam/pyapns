@@ -18,7 +18,7 @@ module PYAPNS
       args = [hash[:app_id], hash[:cert], 
               hash[:environment], hash[:timeout]]
       if (args.find_all { |l| not l.nil? }).length == 4
-        perform_call('provision', args, block)
+        perform_call('provision', args, &block)
       else
         raise "Invalid arguments supplied to provision"
       end
@@ -28,7 +28,7 @@ module PYAPNS
       args = [hash[:app_id], hash[:tokens] || hash[:token], 
               hash[:notifications] || hash[:notification]]PYA
       if (args.find_all { |l| not l.nil? }).length == 3
-        perform_call('notify', args, block)
+        perform_call('notify', args, &block)
       else
         raise "Invalid Arguments supplied to notify"
       end
@@ -37,13 +37,13 @@ module PYAPNS
     def feedback(hash={}, &block)
       args =[hash[:app_id]]
       if (args.find_all { |l| not l.nil? }).length == 1
-        perform_call('feedback', args, block)
+        perform_call('feedback', args, &block)
       else
         raise "Invalid arguments supplied to feedback"
       end
     end
     
-    def perform_call(method, args, block)
+    def perform_call(method, args, &block)
       if !configured?
         raise "The client is not configured."
       end
