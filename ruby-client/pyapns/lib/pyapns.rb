@@ -21,37 +21,57 @@ module PYAPNS
     end
 
     def provision(*args, &block)
-      get_args args, :app_id, :cert, :env, :timeout do |args|
-        perform_call :provision, args, &block
-      end
+      perform_call :provision, args, :app_id, :cert, :env, :timeout, &block
     end
 
     def notify(*args, &block)
-      get_args args, :app_id, :tokens, :notifications do |args|
-        perform_call :notify, args, &block
-      end
+      perform_call :notify, args, :app_id, :tokens, :notifications, &block
     end
 
     def feedback(*args, &block)
-      get_args args, :app_id do |args|
-        perform_call :feedback, args, &block
-      end
+      perform_call :feedback, args, :app_id, &block
     end
 
     def perform_call(method, splat, *args, &block)
       if !configured?
-        raise "The client is not configured."
+        raise PYAPNS::NotConfigured.new
       end
-      if block_given?
-        Thread.new {
-          block.call(@client.call_async(method.to_s, *args))
-        }
-        nil
+      if splat.length == 1 && splat[0].class == Hash
+        splat = args.map { |k| splat[0][k] }
+      end
+      if (splat.find_all { |l| not l.nil? }).length == args.length
+        if block_given?
+          Thread.new do 
+            perform_call2 {
+              block.call(@client.call_async(method.to_s, *splat)) 
+            }
+          end
+          nil
+        else
+          perform_call2 { @client.call(method.to_s, *args) }
+        end
       else
-        @client.call(method.to_s, *args)
+        raise PYAPNS::InvalidArguments.new "Invalid args supplied to #{method.to_s}"
       end
     end
-
+    
+    def perform_call2(&block)
+      begin
+        block.call()
+      rescue XMLRPC::FaultException => fault
+        case fault.faultCode
+        when 404
+          raise PYAPNS::UnknownAppID.new
+        when 401
+          raise PYAPNS::InvalidEnvironment.new
+        when 500
+          raise PYAPNS::ServerTimeout.new
+        else
+          raise fault
+        end
+      end
+    end
+    
     def configured?
       return @configured
     end
@@ -75,27 +95,23 @@ module PYAPNS
         h['initial'].each do |initial|
           provision(:app_id => initial[:app_id], 
                     :cert => initial[:cert], 
-                    :environment => initial[:environment], 
+                    :env => initial[:env], 
                     :timeout => initial[:timeout] || 15)
         end
       end
       @configured = true
       self
     end
-    
-    def get_args(splat, *args)
-      if splat.length == 1 && splat[0].class == Hash
-        splat = args.map { |k| splat[0][k] }
-      end
-      if (splat.find_all { |l| not l.nil? }).length == args.length
-        yield splat
-      else
-        raise "Invalid args supplied"
-      end
-    end
   end
   
   class ClientConfiguration
+    # This is middleware for a Rack application
+    # it enables you to easily use PYAPNS::Client 
+    # within the context of a web application
+    # simply call
+    #     use PYAPNS::ClientConfiguration(:arg => value, ...)
+    # to enable the client's use in your web app
+    
     def initialize(app, hash={})
       @app = app
       PYAPNS::Client.configure(hash)
@@ -104,5 +120,20 @@ module PYAPNS
     def call(env)
       @app.call(env)
     end
+  end
+  
+  class UnknownAppID < Exception
+  end
+  
+  class NotConfigured < Exception
+  end
+  
+  class InvalidEnvironment < Exception
+  end
+  
+  class ServerTimeout < Exception
+  end
+  
+  class InvalidArguments < Exception
   end
 end
