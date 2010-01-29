@@ -179,9 +179,9 @@ Each of these functions can be called synchronously and asynchronously. To make 
         Feedback tuples like [(datetime_expired, token_str), ...]
 
 
-### The Ruby API
+## The Ruby API
 
-###`PYAPNS::Client`
+###PYAPNS::Client
 There's python in my ruby!
 
 This is a class used to send notifications, provision applications and
@@ -205,7 +205,7 @@ charge a fee each time you push a notification, and charge extra for so-called
 However, PYAPNS is free, as in beer and offers more scaling opportunities without
 the financial draw.
 
-####Provisioning
+###Provisioning
 
 To add your app to the PYAPNS server, it must be `provisioned` at least once.
 Normally this is done once upon the start-up of your application, be it a web
@@ -230,7 +230,7 @@ See the docs on `PYAPNS::ClientConfiguration` for a list of available configurat
 parameters (some of these are important, and you can specify initial applications)
 to be configured by default.
 
-####Sending Notifications
+###Sending Notifications
 
 Once your client is configured, and application provisioned (again, these
 should be taken care of before you write notification code) you can begin
@@ -258,7 +258,7 @@ converted to `PYAPNS::Notification` objects so they can be optimized for the wir
 (nil values removed, etc...), and you can pass `PYAPNS::Notification` objects
 directly if you wish.
 
-####Retrieving Feedback
+###Retrieving Feedback
 
 The APS service offers a feedback functionality that allows application servers
 to retrieve a list of device tokens it deems to be no longer in use, and the
@@ -269,7 +269,7 @@ with the date and the token:
 
     feedbacks = client.feedback 'cf'
 
-####Asynchronous Calls
+###Asynchronous Calls
 
 PYAPNS::Client will, by default, perform no funny stuff and operate entirely
 within the calling thread. This means that certain applications may hang when,
@@ -287,7 +287,7 @@ Just pass a block to provision/notify/feedback like so:
       feedbacks.each { |f| trim_token f }
     end
 
-###`PYAPNS::ClientConfiguration`
+###PYAPNS::ClientConfiguration
 A middleware class to make `PYAPNS::Client` easy to use in web contexts
 
 Automates configuration of the client in Rack environments
@@ -323,7 +323,7 @@ Where the configuration variables are defined:
     :timoeut  Number      The timeout for the server to use when connecting
                           to the apple servers
 
-###`PYAPNS::Notification`
+###PYAPNS::Notification
 An APNS Notification
 
 You can construct notification objects ahead of time by using this class.
