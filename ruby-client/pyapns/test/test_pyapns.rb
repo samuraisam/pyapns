@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + '/test_helper.rb'
 
-class TestPyapns < Test::Unit::TestCase
+class TestPYAPNS < Test::Unit::TestCase
 
   def setup
   end
