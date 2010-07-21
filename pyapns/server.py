@@ -242,6 +242,7 @@ class APNSServer(xmlrpc.XMLRPC):
   def __init__(self):
     self.allowNone = True
     self.app_ids = app_ids
+    self.useDateTime = True
   
   def apns_service(self, app_id):
     if app_id not in app_ids:
