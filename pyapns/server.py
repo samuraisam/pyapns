@@ -242,6 +242,7 @@ class APNSServer(xmlrpc.XMLRPC):
   def __init__(self):
     self.allowNone = True
     self.app_ids = app_ids
+    self.useDateTime = True
   
   def apns_service(self, app_id):
     if app_id not in app_ids:
@@ -324,7 +325,7 @@ def encode_notifications(tokens, notifications):
   if type(notifications) is dict and type(tokens) in (str, unicode):
     tokens, notifications = ([tokens], [notifications])
   if type(notifications) is list and type(tokens) is list:
-    return ''.join(map(lambda y: structify(*y), ((binaryify(t), json.dumps(p))
+    return ''.join(map(lambda y: structify(*y), ((binaryify(t), json.dumps(p, separators=(',',':')))
                                     for t, p in zip(tokens, notifications))))
 
 def decode_feedback(binary_tuples):

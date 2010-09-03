@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
   name="pyapns",
-  version="0.3.0",
+  version="0.3.1",
   description="A universal Apple Push Notification Service (APNS) provider.",
   long_description="""
 Features:
