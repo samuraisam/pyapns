@@ -95,10 +95,15 @@ module PYAPNS
   ## to retrieve a list of device tokens it deems to be no longer in use, and the
   ## time it thinks they stopped being useful (the user uninstalled your app, better
   ## luck next time...) Sounds pretty straight forward, and it is. Apple recommends
-  ## you do this at least once an hour. PYAPNS will return a list of 2-element lists
-  ## with the date and the token:
+  ## you do this at least once an hour. PYAPNS will return an Array of 2-element 
+  ## Arrays with the date and the token:
   ##
   ##      feedbacks = client.feedback 'cf'
+  ##      => [[#<XMLRPC::DateTime:0x123 ... >, 'token'], 
+  ##          [#<XMLRPC::DateTime:0x456 ... >, 'token'], ... ]
+  ##
+  ## Note that the date is an instance of XMLRPC::DateTime, which you'll probably 
+  ## want to call #to_time on to get back a regular Time instance.
   ##
   ## Asynchronous Calls
   ##
