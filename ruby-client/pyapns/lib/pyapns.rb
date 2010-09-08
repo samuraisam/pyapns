@@ -104,7 +104,8 @@ module PYAPNS
   ##
   ## Note that the date is an instance of XMLRPC::DateTime, which you'll probably 
   ## want to call #to_time on to get back a regular Time instance. And, if you're
-  ## searching for or comparing the token received, note that it's _lowercase_ hex.
+  ## searching for or comparing the token received in the hexadecimal form returned, 
+  ## note that it's lowercase hex.
   ##
   ## Asynchronous Calls
   ##
