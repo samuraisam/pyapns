@@ -103,7 +103,8 @@ module PYAPNS
   ##          [#<XMLRPC::DateTime:0x456 ... >, 'token'], ... ]
   ##
   ## Note that the date is an instance of XMLRPC::DateTime, which you'll probably 
-  ## want to call #to_time on to get back a regular Time instance.
+  ## want to call #to_time on to get back a regular Time instance. And, if you're
+  ## searching for or comparing the token received, note that it's _lowercase_ hex.
   ##
   ## Asynchronous Calls
   ##
