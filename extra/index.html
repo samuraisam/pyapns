@@ -80,6 +80,7 @@ Features:
   <li>Simplified feedback interface</li>
 </ul>
 
+<h2>Usage</h2>
 <p>pyapns is an APNS provider that you install on your server and access through XML-RPC. To install you will need Python, <a href="http://pypi.python.org/pypi/Twisted">Twisted</a> and <a href="http://pypi.python.org/pypi/pyOpenSSL">pyOpenSSL</a>. It's also recommended to install <a href="http://pypi.python.org/pypi/python-epoll/">python-epoll</a> for best performance (if epoll is not available, like on Mac OS X, you may want to use another library, like <a href="http://pypi.python.org/pypi/py-kqueue/2.0.1">py-kqueue</a>). If you like easy_install try (it should take care of the dependancies for you):</p>
 
 <pre class="prettyprint lang-bsh"><code>$ sudo easy_install pyapns
@@ -127,11 +128,11 @@ Features:
 
 <p>Call <code>feedback</code> with the <code>app_id</code>. A list of tuples will be retrieved from the APNS server that it deems inactive. These are returned as a list of 2-element lists with a <code>Datetime</code> object and the token string.</p>
 
-<h3>XML-RPC Methods</h3>
+<h2>XML-RPC Methods</h2>
 
 <p>These methods can be called on the server you started the server on. Be sure you are not including <code>/RPC2</code> in the URL.</p>
 
-<h3><code>provision</code></h3>
+<h2><code>provision</code></h2>
 
 <pre class="ignore"><code>  Arguments
     app_id    String        the application id for the provided
@@ -139,7 +140,9 @@ Features:
     cert      String        a path to a .pem file or the a
                             string with the entie file
     environment String      the APNS server to use - either
-                           'production' or 'sandbox'
+                           'production' or 'sandbox
+    timeout   Integer       timeout for connection attempts to
+                            the APS servers'
   Returns
     None
 </code></pre>
@@ -154,8 +157,6 @@ Features:
     notifications Str/Arr   an Array of notification
                             dictionaries or a single
                             notification dictionary
-    timeout   Integer       timeout for connection attempts to
-                            the APS servers
 
   Returns
     None
@@ -171,7 +172,7 @@ Features:
     Array(Array(Datetime(time_expired), String(token)), ...)
 </code></pre>
 
-<h3>The Python API</h3>
+<h2>The Python API</h2>
 
 <p>pyapns also provides a Python API that makes the use of pyapns even simpler. The Python API must be configured before use but configuration files make it easier. The pyapns <code>client</code> module currently supports configuration from Django settings and Pylons config. To configure using Django, the following must be present in  your settings file:</p>
 
