@@ -4,6 +4,10 @@ $:.unshift(File.dirname(__FILE__)) unless
 require 'singleton'
 require 'xmlrpc/client'
 
+XMLRPC::Config.module_eval {
+  remove_const(:ENABLE_NIL_PARSER)  # so that we're not warned about reassigning to a constant
+  ENABLE_NIL_PARSER = true          # so that we don't get "RuntimeError: wrong/unknown XML-RPC type 'nil'"
+}
 
 module PYAPNS  
   VERSION = "0.3.0"
@@ -91,10 +95,17 @@ module PYAPNS
   ## to retrieve a list of device tokens it deems to be no longer in use, and the
   ## time it thinks they stopped being useful (the user uninstalled your app, better
   ## luck next time...) Sounds pretty straight forward, and it is. Apple recommends
-  ## you do this at least once an hour. PYAPNS will return a list of 2-element lists
-  ## with the date and the token:
+  ## you do this at least once an hour. PYAPNS will return an Array of 2-element 
+  ## Arrays with the date and the token:
   ##
   ##      feedbacks = client.feedback 'cf'
+  ##      => [[#<XMLRPC::DateTime:0x123 ... >, 'token'], 
+  ##          [#<XMLRPC::DateTime:0x456 ... >, 'token'], ... ]
+  ##
+  ## Note that the date is an instance of XMLRPC::DateTime, which you'll probably 
+  ## want to call #to_time on to get back a regular Time instance. And, if you're
+  ## searching for or comparing the token received in the hexadecimal form returned, 
+  ## note that it's lowercase hex.
   ##
   ## Asynchronous Calls
   ##
