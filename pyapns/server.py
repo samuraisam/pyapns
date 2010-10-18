@@ -27,6 +27,16 @@ FEEDBACK_SERVER_PORT = 2196
 
 app_ids = {} # {'app_id': APNSService()}
 
+
+class NotificationString(str):
+  def __new__(cls, S, on_failure, tokens, notifications):
+    T = str.__new__(cls, S)
+    T.on_failure = on_failure
+    T.tokens = tokens
+    T.notifications = notifications
+    return T
+
+
 class StringIO(_StringIO):
   """Add context management protocol to StringIO
       ie: http://bugs.python.org/issue1286
@@ -70,14 +80,23 @@ class APNSClientContextFactory(ClientContextFactory):
 class APNSProtocol(Protocol):
   def connectionMade(self):
     log.msg('APNSProtocol connectionMade')
+    self.last_message = None
     self.factory.addClient(self)
   
   def sendMessage(self, msg):
+    self.last_message = msg
     log.msg('APNSProtocol sendMessage msg=%s' % binascii.hexlify(msg))
     return self.transport.write(msg)
   
   def connectionLost(self, reason):
     log.msg('APNSProtocol connectionLost')
+    if self.last_message:
+      C = getattr(self.last_message, 'on_failure', lambda s: s)
+      try:
+        C(self.last_message, reason)
+      except Exception, e:
+        log.msg('APNSProtocol could not call on_failure of last message %s' % str(e))
+    self.last_message = None
     self.factory.removeClient(self)
 
 
@@ -171,16 +190,31 @@ class APNSService(service.Service):
   clientProtocolFactory = APNSClientFactory
   feedbackProtocolFactory = APNSFeedbackClientFactory
   
-  def __init__(self, cert_path, environment, timeout=15):
+  def __init__(self, cert_path, environment, timeout=15, log_disconnections=False):
     log.msg('APNSService __init__')
     self.factory = None
     self.environment = environment
     self.cert_path = cert_path
     self.raw_mode = False
     self.timeout = timeout
+    self.log_disconnections = log_disconnections
+    self.log = []
   
   def getContextFactory(self):
     return APNSClientContextFactory(self.cert_path)
+
+  def _log_disconnection(self, note, reason):
+    log.msg('APNSService _log_disconnection')
+    info = {
+        'notifications': note.notifications,
+        'tokens':        note.tokens,
+        'reason':        str(reason)
+    }
+    self.log.append(['ssl-connection-lost', datetime.datetime.now(), info])
+
+  def failure_callback(self):
+    if self.log_disconnections:
+      return self._log_disconnection
   
   def write(self, notifications):
     "Connect to the APNS service and send notifications"
@@ -249,7 +283,8 @@ class APNSServer(xmlrpc.XMLRPC):
       raise xmlrpc.Fault(404, 'The app_id specified has not been provisioned.')
     return self.app_ids[app_id]
   
-  def xmlrpc_provision(self, app_id, path_to_cert_or_cert, environment, timeout=15):
+  def xmlrpc_provision(self, app_id, path_to_cert_or_cert, environment,
+                       timeout=15, log_disconnections=False):
     """ Starts an APNSService for the this app_id and keeps it running
     
       Arguments:
@@ -268,7 +303,50 @@ class APNSServer(xmlrpc.XMLRPC):
                               'environments are `sandbox` and `production`' % (
                               environment,))
     if not app_id in self.app_ids:
-      self.app_ids[app_id] = APNSService(path_to_cert_or_cert, environment, timeout)
+      self.app_ids[app_id] = APNSService(path_to_cert_or_cert, environment,
+                                         timeout, log_disconnections)
+  
+  def xmlrpc_config(self, app_id, key, value):
+    """ Sets a configuration variable on a given APNSService for an app_id
+    
+    Currently working configuration keys and defaults:
+      'log_disconnections': False
+      'timeout':            15
+
+      Arguments:
+          app_id         the app_id to alter
+          key            configuration key to change
+          value          value of key
+      Returns:
+          None
+    """
+    
+    service = self.apns_service(app_id)
+    try:
+      if key not in ('timeout', 'log_disconnections'): raise KeyError
+      service.__dict__[str(key)] = value
+    except KeyError:
+      raise xmlrpc.Fault(500, 'That configuration value does not exist %s => %s' % 
+                         (key, str(value)))
+  
+  def xmlrpc_log(self, app_id):
+    """ Returns and clears the APNSService log for a given app_id
+
+    Current Types and info keys are:
+      'ssl-connection-lost':
+        'notifications': [list of notification dictionaries]
+        'tokens':        [list ot token strings]
+        'reason':        'stringified connection failure reason'
+      
+      Arguments:
+          app_id        The app_id for which log messages will be returned
+      Returns:
+          List(List(String('type'), DateTime( event time ), {'infokeys': 'infovalues'}), ...)
+    """
+    service = self.apns_service(app_id)
+    logs = service.log[:]
+    service.log[:] = []
+    return logs
   
   def xmlrpc_notify(self, app_id, token_or_token_list, aps_dict_or_list):
     """ Sends push notifications to the Apple APNS server. Multiple 
@@ -283,12 +361,13 @@ class APNSServer(xmlrpc.XMLRPC):
           None
     """
     
-    d = self.apns_service(app_id).write(
+    service = self.apns_service(app_id)
+    d = service.write(
       encode_notifications(
         [t.replace(' ', '') for t in token_or_token_list] 
           if (type(token_or_token_list) is list)
           else token_or_token_list.replace(' ', ''),
-        aps_dict_or_list))
+        aps_dict_or_list, service.failure_callback()))
     if d:
       def _finish_err(r):
         # so far, the only error that could really become of this
@@ -312,7 +391,7 @@ class APNSServer(xmlrpc.XMLRPC):
       lambda r: decode_feedback(r))
 
 
-def encode_notifications(tokens, notifications):
+def encode_notifications(tokens, notifications, on_failure):
   """ Returns the encoded bytes of tokens and notifications
   
         tokens          a list of tokens or a string of only one token
@@ -325,8 +404,10 @@ def encode_notifications(tokens, notifications):
   if type(notifications) is dict and type(tokens) in (str, unicode):
     tokens, notifications = ([tokens], [notifications])
   if type(notifications) is list and type(tokens) is list:
-    return ''.join(map(lambda y: structify(*y), ((binaryify(t), json.dumps(p, separators=(',',':')))
-                                    for t, p in zip(tokens, notifications))))
+    return NotificationString(
+      ''.join(map(lambda y: structify(*y), ((binaryify(t), json.dumps(p, separators=(',',':')))
+                                            for t, p in zip(tokens, notifications)))),
+                              on_failure=on_failure, notifications=notifications, tokens=tokens)
 
 def decode_feedback(binary_tuples):
   """ Returns a list of tuples in (datetime, token_str) format 

@@ -40,8 +40,10 @@ class UnknownAppID(Exception): pass
 class APNSNotConfigured(Exception): pass
 
 
-def provision(app_id, path_to_cert, environment, timeout=15, callback=None):
-  args = [app_id, path_to_cert, environment, timeout]
+def provision(app_id, path_to_cert, environment, timeout=15, log_disconnections=False, callback=None):
+  if getattr(log_disconnections, '__call__', None) is not None:
+    raise NameError("callback is no longer the 4th argument. use keyword arguments instead")
+  args = [app_id, path_to_cert, environment, timeout, log_disconnections]
   if callback is None:
     return _xmlrpc_thread('provision', args, lambda r: r)
   t = threading.Thread(target=_xmlrpc_thread, args=['provision', args, callback])
@@ -61,6 +63,22 @@ def feedback(app_id, callback=None):
   if callback is None:
     return _xmlrpc_thread('feedback', args, lambda r: r)
   t = threading.Thread(target=_xmlrpc_thread, args=['feedback', args, callback])
+  t.daemon = True
+  t.start()
+
+def config(app_id, key, value, callback=None):
+  args = [app_id, key, value]
+  if callback is None:
+    return _xmlrpc_thread('config', args, lambda r: r)
+  t = threading.Thread(target=_xmlrpc_thread, args=['config', args, callback])
+  t.daemon = True
+  t.start()
+
+def log(app_id, callback=None):
+  args = [app_id]
+  if callback is None:
+    return _xmlrpc_thread('log', args, lambda r: r)
+  t = threading.Thread(target=_xmlrpc_thread, args=['log', args, callback])
   t.daemon = True
   t.start()
 
