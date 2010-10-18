@@ -93,7 +93,34 @@ These methods can be called on the server you started the server on. Be sure you
       
       Returns
           Array(Array(Datetime(time_expired), String(token)), ...)
-          
+
+### config
+
+      Sets a configuration variable on a given APNSService for an app_id
+      
+      Currently working configuration keys and defaults:
+        'log_disconnections': False
+        'timeout':            15
+
+      Arguments:
+            app_id         the app_id to alter
+            key            configuration key to change
+            value          value of key
+      Returns:
+            None
+### log
+      Returns and clears the APNSService log for a given app_id
+
+      Current Types and info keys are:
+        'ssl-connection-lost':
+          'notifications': [list of notification dictionaries]
+          'tokens':        [list ot token strings]
+          'reason':        'stringified connection failure reason'
+        
+      Arguments:
+            app_id        The app_id for which log messages will be returned
+      Returns:
+            List(List(String('type'), DateTime( event time ), {'infokeys': 'infovalues'}), ...) 
 
 ### The Python API
 pyapns also provides a Python API that makes the use of pyapns even simpler. The Python API must be configured before use but configuration files make it easier. The pyapns `client` module currently supports configuration from Django settings and Pylons config. To configure using Django, the following must be present in  your settings file:

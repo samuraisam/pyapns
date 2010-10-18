@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
   name="pyapns",
-  version="0.3.2",
+  version="0.3.3",
   description="A universal Apple Push Notification Service (APNS) provider.",
   long_description="""
 Features:
@@ -126,6 +126,40 @@ XML-RPC Methods
 
       Returns
           Array(Array(Datetime(time_expired), String(token)), ...)
+
+``log``
+__________
+
+::
+
+       Returns and clears the APNSService log for a given app_id
+
+       Current Types and info keys are:
+        'ssl-connection-lost':
+          'notifications': [list of notification dictionaries]
+          'tokens':        [list ot token strings]
+          'reason':        'stringified connection failure reason'
+        
+       Arguments:
+            app_id        String           The app_id for which log messages will be returned
+       Returns:
+            List(List(String('type'), DateTime( event time ), {'infokeys': 'infovalues'}), ...)
+ 
+``config``
+
+::
+       Sets a configuration variable on a given APNSService for an app_id
+      
+       Currently working configuration keys and defaults:
+         'log_disconnections': False
+         'timeout':            15
+
+       Arguments:
+            app_id         the app_id to alter
+            key            configuration key to change
+            value          value of key
+       Returns:
+            None
 
 
 The Python API
