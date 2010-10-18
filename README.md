@@ -68,6 +68,8 @@ These methods can be called on the server you started the server on. Be sure you
                                           'production' or 'sandbox'
           timeout       Integer           timeout for connection attempts to
                                           the APS servers
+          log_disconnections Boolean      whether or not to keep track of when
+                                          a connection is lost
       Returns
           None
 
@@ -103,9 +105,9 @@ These methods can be called on the server you started the server on. Be sure you
         'timeout':            15
 
       Arguments:
-            app_id         the app_id to alter
-            key            configuration key to change
-            value          value of key
+            app_id         String         the app_id to alter
+            key            String         configuration key to change
+            value          Any            value of key
       Returns:
             None
 ### log
@@ -118,7 +120,7 @@ These methods can be called on the server you started the server on. Be sure you
           'reason':        'stringified connection failure reason'
         
       Arguments:
-            app_id        The app_id for which log messages will be returned
+            app_id        String          The app_id for which log messages will be returned
       Returns:
             List(List(String('type'), DateTime( event time ), {'infokeys': 'infovalues'}), ...) 
 
