@@ -1,6 +1,7 @@
 import xmlrpclib
 import threading
 import httplib
+from sys import hexversion
 
 OPTIONS = {'CONFIGURED': False, 'TIMEOUT': 20}
 
@@ -93,8 +94,12 @@ def ServerProxy(url, *args, **kwargs):
 
 class TimeoutTransport(xmlrpclib.Transport):
   def make_connection(self, host):
-    conn = TimeoutHTTP(host)
-    conn.set_timeout(self.timeout)
+    if hexversion < 0x02070000:
+        conn = TimeoutHTTP(host)
+        conn.set_timeout(self.timeout)
+    else:
+        conn = TimeoutHTTPConnection(host)
+        conn.timeout = self.timeout
     return conn
 
 class TimeoutHTTPConnection(httplib.HTTPConnection):
