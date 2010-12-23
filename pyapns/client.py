@@ -40,7 +40,7 @@ class UnknownAppID(Exception): pass
 class APNSNotConfigured(Exception): pass
 
 
-def provision(app_id, path_to_cert, environment, timeout=15, log_disconnections=False, callback=None):
+def provision(app_id, path_to_cert, environment, timeout=15, log_disconnections=False, debug=False, callback=None):
   if getattr(log_disconnections, '__call__', None) is not None:
     raise NameError("callback is no longer the 4th argument. use keyword arguments instead")
   args = [app_id, path_to_cert, environment, timeout, log_disconnections]
@@ -55,6 +55,14 @@ def notify(app_id, tokens, notifications, callback=None):
   if callback is None:
     return _xmlrpc_thread('notify', args, lambda r: r)
   t = threading.Thread(target=_xmlrpc_thread, args=['notify', args, callback])
+  t.daemon = True
+  t.start()
+
+def notify2(app_id, tokens, notifications, expirys, identifiers, callback=None):
+  args = [app_id, tokens, notifications, expirys, identifiers]
+  if callback is None:
+    return _xmlrpc_thread('notify2', args, lambda r: r)
+  t = threading.Thread(target=_xmlrpc_thread, args=['notify2', args, callback])
   t.daemon = True
   t.start()
 

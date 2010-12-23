@@ -1,7 +1,7 @@
 from __future__ import with_statement
 import _json as json
 import base64
-import struct
+import struct, time
 import logging
 import binascii
 import datetime
@@ -15,7 +15,7 @@ from twisted.application import internet, service
 from twisted.protocols.basic import LineReceiver
 from twisted.python import log
 from zope.interface import Interface, implements
-from twisted.web import xmlrpc
+from twisted.web import xmlrpc, resource
 
 
 APNS_SERVER_SANDBOX_HOSTNAME = "gateway.sandbox.push.apple.com"
@@ -24,16 +24,32 @@ APNS_SERVER_PORT = 2195
 FEEDBACK_SERVER_SANDBOX_HOSTNAME = "feedback.sandbox.push.apple.com"
 FEEDBACK_SERVER_HOSTNAME = "feedback.push.apple.com"
 FEEDBACK_SERVER_PORT = 2196
+APNS_STATUS_CODES = {
+    0: 'No errors encountered',
+    1: 'Processing error',
+    2: 'Missing device token',
+    3: 'Missing topic',
+    4: 'Missing payload',
+    5: 'Invalid token size',
+    6: 'Invalid topic size',
+    7: 'Invalid payload size',
+    8: 'Invalid token',
+    255: 'None (unknown)'
+}
 
 app_ids = {} # {'app_id': APNSService()}
 
 
+
 class NotificationString(str):
-  def __new__(cls, S, on_failure, tokens, notifications):
+  def __new__(cls, S, on_failure, tokens, notifications, expirys=None, identifiers=None):
     T = str.__new__(cls, S)
     T.on_failure = on_failure
     T.tokens = tokens
     T.notifications = notifications
+    T.expirys = expirys
+    T.identifiers = identifiers 
+    T.debug = False
     return T
 
 
@@ -49,6 +65,7 @@ class StringIO(_StringIO):
   
   def __exit__(self, exc, value, tb):
     self.close()
+
 
 class IAPNSService(Interface):
     """ Interface for APNS """
@@ -80,23 +97,44 @@ class APNSClientContextFactory(ClientContextFactory):
 class APNSProtocol(Protocol):
   def connectionMade(self):
     log.msg('APNSProtocol connectionMade')
-    self.last_message = None
+    self.last_messages = []
+    self.last_error = None
+    if 'timeout' in self.__dict__ and self.timeout:
+      self.timeout.cancel()
+    self.timeout = reactor.callLater(.750, self._timeout_last_sents)
     self.factory.addClient(self)
   
+  def _timeout_last_sents(self):
+    self.last_messages = []
+    self.timeout = reactor.callLater(.750, self._timeout_last_sents)
+  
   def sendMessage(self, msg):
-    self.last_message = msg
+    self.last_messages.append(msg)
     log.msg('APNSProtocol sendMessage msg=%s' % binascii.hexlify(msg))
-    return self.transport.write(msg)
+    self.transport.write(msg)
+    if msg.debug:
+      self.transport.doWrite()
+      time.sleep(.750)
+
+  def dataReceived(self, data):
+    try:
+      self.last_error = decode_error_packet(data)
+      log.msg('APNSProtocol dataReceived err=%s' % str(self.last_error))
+    except:
+      pass
   
   def connectionLost(self, reason):
     log.msg('APNSProtocol connectionLost')
-    if self.last_message:
-      C = getattr(self.last_message, 'on_failure', lambda s: s)
+    if 'timeout' in self.__dict__ and self.timeout:
+      self.timeout.cancel()
+    if self.last_messages:
+      C = getattr(self.last_messages[-1], 'on_failure', lambda s: s)
       try:
-        C(self.last_message, reason)
+        C(self.last_messages, reason, self.last_error)
       except Exception, e:
         log.msg('APNSProtocol could not call on_failure of last message %s' % str(e))
-    self.last_message = None
+    self.last_messages = None
+    self.last_error = None
     self.factory.removeClient(self)
 
 
@@ -178,7 +216,7 @@ class APNSClientFactory(ReconnectingClientFactory):
   
   def clientConnectionFailed(self, connector, reason):
     log.msg('APNSClientFactory clientConnectionFailed reason=%s' % reason)
-    ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
+    ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
 
 
 class APNSService(service.Service):
@@ -190,12 +228,13 @@ class APNSService(service.Service):
   clientProtocolFactory = APNSClientFactory
   feedbackProtocolFactory = APNSFeedbackClientFactory
   
-  def __init__(self, cert_path, environment, timeout=15, log_disconnections=False):
+  def __init__(self, cert_path, environment, timeout=15, log_disconnections=False, debug=False):
     log.msg('APNSService __init__')
     self.factory = None
     self.environment = environment
     self.cert_path = cert_path
     self.raw_mode = False
+    self.debug = debug
     self.timeout = timeout
     self.log_disconnections = log_disconnections
     self.log = []
@@ -203,13 +242,20 @@ class APNSService(service.Service):
   def getContextFactory(self):
     return APNSClientContextFactory(self.cert_path)
 
-  def _log_disconnection(self, note, reason):
+  def _log_disconnection(self, notes, reason, error):
     log.msg('APNSService _log_disconnection')
     info = {
-        'notifications': note.notifications,
-        'tokens':        note.tokens,
-        'reason':        str(reason)
+        'last-messages': [],
+        'error': error
     }
+    for note in notes:
+      info['last-messages'].append({
+          'notifications': note.notifications,
+          'tokens':        note.tokens,
+          'reason':        str(reason),
+          'identifiers':   note.identifiers,
+          'expiriations':  note.expirys
+      })
     self.log.append(['ssl-connection-lost', datetime.datetime.now(), info])
 
   def failure_callback(self):
@@ -218,6 +264,7 @@ class APNSService(service.Service):
   
   def write(self, notifications):
     "Connect to the APNS service and send notifications"
+    notifications.debug = self.debug
     if not self.factory:
       log.msg('APNSService write (connecting)')
       server, port = ((APNS_SERVER_SANDBOX_HOSTNAME 
@@ -228,6 +275,8 @@ class APNSService(service.Service):
       reactor.connectSSL(server, port, self.factory, context)
     
     client = self.factory.clientProtocol
+    if self.debug:
+      time.sleep(.750)
     if client:
       return client.sendMessage(notifications)
     else:      
@@ -239,8 +288,11 @@ class APNSService(service.Service):
         try: timeout.cancel()
         except: pass
         return r
-      
-      d.addCallback(lambda p: p.sendMessage(notifications))
+      def send_cb(p):
+        if self.debug:
+          time.sleep(.750)
+          p.sendMessage(notifications)
+      d.addCallback(send_cb)
       d.addErrback(log_errback('apns-service-write'))
       d.addBoth(cancel_timeout)
       return d
@@ -272,16 +324,65 @@ class APNSService(service.Service):
     return factory.deferred
 
 
-class APNSServer(xmlrpc.XMLRPC):
+class NotProvisioned(xmlrpc.Fault):
+  pass
+
+
+class APNSInterface(object):
+  apps = app_ids
+  le_id = 0
+  distant_future = 9999999999*10
+
+  def service(self, app_id):
+    if app_id not in APNSInterface.apps:
+      raise NotProvisioned(404, 'That app id (%s) is not provisioned' % app_id)
+    return APNSInterface.apps[app_id]
+  
+  def provision(self, app_id, cert, env, timeout=15, log_disconnections=False, debug=False):
+    if env not in ('production', 'sandbox'):
+      raise ValueError('environment must be either production or sandbox')
+    if not app_id in APNSInterface.apps:
+      APNSInterface.apps[app_id] = APNSService(cert, env, timeout, log_disconnections, debug)
+
+  def config(self, app_id, key, value):
+    if key not in ('timeout', 'log_disconnections', 'debug'): raise KeyError
+    self.service(app_id).__dict__[str(key)] = value
+
+  def log(self, app_id):
+    service = self.service(app_id)
+    logs = service.log[:]
+    service.log[:] = []
+    return logs
+  
+  def notify(self, app_id, tokens, notifications):
+    service = self.service(app_id)
+    def _le_next_id():
+      self.le_id += 1
+      return self.le_id
+    tokens = tokens if type(tokens) is list else [tokens]
+    notifications = notifications if type(notifications) is list else [notifications]
+    self.notify2(app_id, tokens, notifications,
+        [self.distant_future]*len(tokens), 
+        [_le_next_id() for i in xrange(len(tokens))])
+    return d
+
+  def notify2(self, app_id, tokens, notifications, expirys, idents):
+    service = self.service(app_id)
+    return service.write(
+        encode_notifications2(
+          [t.replace(' ', '') for t in (tokens if type(tokens) is list else [tokens])],
+          notifications, expirys, idents, service.failure_callback()))
+
+  def feedback(self, app_id):
+    return self.service(app_id).read().addCallback(
+      lambda r: decode_feedback(r))
+
+
+class APNSServer(xmlrpc.XMLRPC, APNSInterface):
   def __init__(self):
     self.allowNone = True
-    self.app_ids = app_ids
+    self.app_ids = APNSInterface.apps
     self.useDateTime = True
-  
-  def apns_service(self, app_id):
-    if app_id not in app_ids:
-      raise xmlrpc.Fault(404, 'The app_id specified has not been provisioned.')
-    return self.app_ids[app_id]
   
   def xmlrpc_provision(self, app_id, path_to_cert_or_cert, environment,
                        timeout=15, log_disconnections=False):
@@ -297,14 +398,12 @@ class APNSServer(xmlrpc.XMLRPC):
       Returns:
           None
     """
-    
-    if environment not in ('sandbox', 'production'):
+    try:
+      self.provision(app_id, path_to_cert_or_cert, environment, timeout, log_disconnections)
+    except ValueError:
       raise xmlrpc.Fault(401, 'Invalid environment provided `%s`. Valid '
                               'environments are `sandbox` and `production`' % (
                               environment,))
-    if not app_id in self.app_ids:
-      self.app_ids[app_id] = APNSService(path_to_cert_or_cert, environment,
-                                         timeout, log_disconnections)
   
   def xmlrpc_config(self, app_id, key, value):
     """ Sets a configuration variable on a given APNSService for an app_id
@@ -320,11 +419,8 @@ class APNSServer(xmlrpc.XMLRPC):
       Returns:
           None
     """
-    
-    service = self.apns_service(app_id)
     try:
-      if key not in ('timeout', 'log_disconnections'): raise KeyError
-      service.__dict__[str(key)] = value
+      self.config(app_id, key, value)
     except KeyError:
       raise xmlrpc.Fault(500, 'That configuration value does not exist %s => %s' % 
                          (key, str(value)))
@@ -343,10 +439,8 @@ class APNSServer(xmlrpc.XMLRPC):
       Returns:
           List(List(String('type'), DateTime( event time ), {'infokeys': 'infovalues'}), ...)
     """
-    service = self.apns_service(app_id)
-    logs = service.log[:]
-    service.log[:] = []
-    return logs
+
+    return self.log(app_id)
   
   def xmlrpc_notify(self, app_id, token_or_token_list, aps_dict_or_list):
     """ Sends push notifications to the Apple APNS server. Multiple 
@@ -361,13 +455,7 @@ class APNSServer(xmlrpc.XMLRPC):
           None
     """
     
-    service = self.apns_service(app_id)
-    d = service.write(
-      encode_notifications(
-        [t.replace(' ', '') for t in token_or_token_list] 
-          if (type(token_or_token_list) is list)
-          else token_or_token_list.replace(' ', ''),
-        aps_dict_or_list, service.failure_callback()))
+    d = self.notify(app_id, token_or_token_list, aps_dic_or_list)
     if d:
       def _finish_err(r):
         # so far, the only error that could really become of this
@@ -376,6 +464,27 @@ class APNSServer(xmlrpc.XMLRPC):
         # to reconnect to, we timeout and notifify the client
         raise xmlrpc.Fault(500, 'Connection to the APNS server could not be made.')
       return d.addCallbacks(lambda r: None, _finish_err)
+
+  def xmlrpc_notify2(self, app_id, tokens, notifications, expirys, identifiers):
+    """ Just like `notify' but uses the newer enhanced service which returns
+    an uses an identifier for each notification (a long) and an expiration
+    (a UTC timestamp in seconds) for each notification
+
+      Arguments:
+          app_id              provisioned app_id to send to
+          tokens              a token or list of tokens to send to
+          notifications       a notification or list of notifications (same length as tokens)
+          expirys             expiration period for these notifications
+          identifiers         identifiers for each notification
+      Returns:
+          None
+    """
+
+    d = self.notify2(app_id, tokens, notifications, expirys, identifiers)
+    if d:
+      def _done_sending_err(r):
+        raise xmlrpc.Fault(500, 'Connection to the APNS Server could not be made.')
+      return d.addCallbacks(lambda r: None, _done_sending_err) 
   
   def xmlrpc_feedback(self, app_id):
     """ Queries the Apple APNS feedback server for inactive app tokens. Returns
@@ -387,8 +496,108 @@ class APNSServer(xmlrpc.XMLRPC):
           Feedback tuples like (datetime_expired, token_str)
     """
     
-    return self.apns_service(app_id).read().addCallback(
-      lambda r: decode_feedback(r))
+    return self.feedback(app_id)
+
+
+from twisted.web.resource import NoResource
+import json
+
+
+def json_response(F):
+  def _wrap(self, request):
+    R = F(self, request)
+    request.setHeader('Content-Type', 'application/json')
+    if isinstance(R, defer.Deferred):
+      return R.addCallback(json.dumps)
+    return json.dumps(R)
+  return _wrap
+
+
+def application_v1(app_id, app):
+  return {
+      'app_id': app_id,
+      'environment': app.environment,
+      'cert': app.cert_path,
+      'timeout': app.timeout,
+      'log_disconnections': app.log_disconnections,
+      'log': app.log
+  }
+
+class APNSApplicationResource(resource.Resource):
+  def __init__(self, *args):
+    resource.Resource.__init__(self)
+    self.app = args[0]
+    self.app_id = args[1]
+    self.args = args
+
+
+class APNSAppRootResource(APNSApplicationResource):
+  def getChild(self, name, request):
+    print 'get child', name, str(request)
+    if name == 'feedback':
+      return APNSAppFeedbackResource(*self.args)
+    return self
+  
+  @json_response
+  def render_GET(self, request):
+    return application_v1(self.app_id, self.app)
+
+
+class APNSAppFeedbackResource(APNSApplicationResource):
+  @json_response
+  def render_GET(self, request):
+    return self.feedback(self.app_id)
+
+
+class APNSAppNotificationResource(APNSApplicationResource):
+  @json_response
+  def render_POST(self, request):
+    return 'not implemented'
+
+
+class APNSAppsResource(resource.Resource, APNSInterface):
+  def getChild(self, name, request):
+    if name == '': return self
+    try:
+      return APNSApplicationResource(name, self.service(name))
+    except NotProvisioned:
+      return NoResource()
+
+  @json_response
+  def render_POST(self, request):
+    self._provision(request)
+    return [application_v1(app_id, self.service(app_id))
+      for app_id in request.args['app_id']]
+  
+  @json_response
+  def render_GET(self, request):
+    face = APNSInterface()
+    return [application_v1(k, face.service(k)) for k in APNSInterface.apps.keys()]
+  
+  def _provision(self, request):
+    face = APNSInterface()
+    for i in xrange(len(request.args['app_id'])):
+      face.provision(
+          request.args['app_id'][i],
+          request.args['cert'][i],
+          request.args['environment'][i],
+          int(request.args['timeout'][i]),
+          bool(request.args['log_disconnections'][i]))
+
+
+class APNSRestServer(resource.Resource):
+  def getChild(self, name, request):
+    log.msg('APNSRestServer ' + name)
+    if name == 'api':
+      return self
+    if name == 'v1':
+      return self
+    if name == 'apps':
+      return APNSAppsResource()
+    return self
+
+  def render_GET(self, request):
+    return "Hello wurld"
 
 
 def encode_notifications(tokens, notifications, on_failure):
@@ -409,6 +618,20 @@ def encode_notifications(tokens, notifications, on_failure):
                                             for t, p in zip(tokens, notifications)))),
                               on_failure=on_failure, notifications=notifications, tokens=tokens)
 
+def encode_notifications2(tokens, notifications, expirys, identifiers, on_failure):
+  fmt = '!BLLH32sH%ds'
+  structify = lambda t, e, i, p: struct.pack(fmt % len(p), 1, e, i, 32, t, len(p), p)
+  binaryify = lambda t: t.decode('hex')
+  _list = lambda v: v if type(v) is list else [v]
+  return NotificationString(
+      ''.join(map(lambda y: structify(*y), (
+        (binaryify(t), e, i, json.dumps(p, separators=(',',':')))
+           for t, e, i, p in zip(_list(tokens),
+                                 map(int, _list(expirys)), map(int, _list(identifiers)),
+                                 _list(notifications))))),
+          on_failure=on_failure, notifications=notifications,
+          tokens=tokens, expirys=expirys, identifiers=identifiers)
+
 def decode_feedback(binary_tuples):
   """ Returns a list of tuples in (datetime, token_str) format 
   
@@ -421,6 +644,13 @@ def decode_feedback(binary_tuples):
     return [(datetime.datetime.fromtimestamp(ts), binascii.hexlify(tok))
             for ts, toklen, tok in (struct.unpack(fmt, tup) 
                               for tup in iter(lambda: f.read(size), ''))]
+
+def decode_error_packet(packet):
+  fmt = '!Bbl'
+  cmd, code, ident = struct.unpack(fmt, packet)
+  print 'decode ', cmd, code, ident
+  if code in APNS_STATUS_CODES:
+    return (code, APNS_STATUS_CODES[code], ident)
 
 def log_errback(name):
   def _log_errback(err, *args):
