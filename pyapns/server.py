@@ -455,7 +455,7 @@ class APNSServer(xmlrpc.XMLRPC, APNSInterface):
           None
     """
     
-    d = self.notify(app_id, token_or_token_list, aps_dic_or_list)
+    d = self.notify(app_id, token_or_token_list, aps_dict_or_list)
     if d:
       def _finish_err(r):
         # so far, the only error that could really become of this
