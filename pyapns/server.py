@@ -455,7 +455,10 @@ class APNSServer(xmlrpc.XMLRPC, APNSInterface):
           None
     """
     
-    d = self.notify(app_id, token_or_token_list, aps_dict_or_list)
+    try:
+      d = self.notify(app_id, token_or_token_list, aps_dict_or_list)
+    except APNSEncodeError, e:
+      raise xmlrpc.Fault(500, 'There was an error encoding your notification: %s' % str(e))
     if d:
       def _finish_err(r):
         # so far, the only error that could really become of this
@@ -480,7 +483,10 @@ class APNSServer(xmlrpc.XMLRPC, APNSInterface):
           None
     """
 
-    d = self.notify2(app_id, tokens, notifications, expirys, identifiers)
+    try:
+      d = self.notify2(app_id, tokens, notifications, expirys, identifiers)
+    except APNSEncodeError, e:
+      raise xmlrpc.Fault(500, 'There was an error encoding your notifications: %s' % str(e))
     if d:
       def _done_sending_err(r):
         raise xmlrpc.Fault(500, 'Connection to the APNS Server could not be made.')
@@ -618,10 +624,19 @@ def encode_notifications(tokens, notifications, on_failure):
                                             for t, p in zip(tokens, notifications)))),
                               on_failure=on_failure, notifications=notifications, tokens=tokens)
 
+
+class APNSEncodeError(Exception): pass
+
+
 def encode_notifications2(tokens, notifications, expirys, identifiers, on_failure):
   fmt = '!BLLH32sH%ds'
   structify = lambda t, e, i, p: struct.pack(fmt % len(p), 1, e, i, 32, t, len(p), p)
   binaryify = lambda t: t.decode('hex')
+  def binaryify(t):
+    try:
+      return t.decode('hex')
+    except TypeError, e:
+      raise APNSEncodeError('token "%s" could not be decoded: %s' % (str(t), str(e))
   _list = lambda v: v if type(v) is list else [v]
   return NotificationString(
       ''.join(map(lambda y: structify(*y), (
