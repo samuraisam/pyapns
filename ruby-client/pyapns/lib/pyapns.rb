@@ -5,8 +5,8 @@ require 'singleton'
 require 'xmlrpc/client'
 
 XMLRPC::Config.module_eval {
-  remove_const(:ENABLE_NIL_PARSER)  # so that we're not warned about reassigning to a constant
-  ENABLE_NIL_PARSER = true          # so that we don't get "RuntimeError: wrong/unknown XML-RPC type 'nil'"
+  remove_const(:ENABLE_NIL_PARSER)     # so that we're not warned about reassigning to a constant
+  const_set(:ENABLE_NIL_PARSER, true)  # so that we don't get "RuntimeError: wrong/unknown XML-RPC type 'nil'"
 }
 
 module PYAPNS  
