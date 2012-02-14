@@ -1,4 +1,4 @@
-import twisted.application, twisted.web
+import twisted.application, twisted.web, twisted.application.internet
 import pyapns.server
 
 application = twisted.application.service.Application("pyapns application")
