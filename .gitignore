@@ -4,5 +4,6 @@ build/**
 *.mode1v3
 .svn
 .cvs
-.DS_Store
-.pyc
+*.DS_Store
+*.pyc
+*.egg-info
