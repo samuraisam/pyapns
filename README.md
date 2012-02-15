@@ -135,7 +135,7 @@ Each of these functions can be called synchronously and asynchronously. To make 
         INITIAL     - A List of tuples to be supplied to provision when
                       the first configuration happens.
 
-### `pyapns.client.provision(app_id, path_to_cert_or_cert, environment, timeout=15, callback=None)`
+### `pyapns.client.provision(app_id, path_to_cert_or_cert, environment, timeout=15, async=False, callback=None, errback=None)`
 
     Provisions the app_id and initializes a connection to the APNS server.
     Multiple calls to this function will be ignored by the pyapns daemon
@@ -157,7 +157,7 @@ Each of these functions can be called synchronously and asynchronously. To make 
     Returns:
         None
 
-### `pyapns.client.notify(app_id, tokens, notifications, callback=None)`
+### `pyapns.client.notify(app_id, tokens, notifications, async=False, callback=None, errback=None)`
 
     Sends push notifications to the APNS server. Multiple 
     notifications can be sent by sending pairing the token/notification
@@ -176,7 +176,7 @@ Each of these functions can be called synchronously and asynchronously. To make 
       Returns:
           None
 
-### `pyapns.client.feedback(app_id, callback=None)`
+### `pyapns.client.feedback(app_id, async=False, callback=None, errback=None)`
 
     Retrieves a list of inactive tokens from the APNS server and the times
     it thinks they went inactive.
