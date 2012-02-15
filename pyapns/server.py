@@ -1,8 +1,6 @@
 from __future__ import with_statement
 import _json as json
-import base64
 import struct
-import logging
 import binascii
 import datetime
 from StringIO import StringIO as _StringIO
@@ -11,7 +9,7 @@ from twisted.internet import reactor, defer
 from twisted.internet.protocol import (
   ReconnectingClientFactory, ClientFactory, Protocol, ServerFactory)
 from twisted.internet.ssl import ClientContextFactory
-from twisted.application import internet, service
+from twisted.application import service
 from twisted.protocols.basic import LineReceiver
 from twisted.python import log
 from zope.interface import Interface, implements
@@ -52,7 +50,10 @@ class IAPNSService(Interface):
 
 class APNSClientContextFactory(ClientContextFactory):
   def __init__(self, ssl_cert_file):
-    log.msg('APNSClientContextFactory ssl_cert_file=%s' % ssl_cert_file)
+    if 'BEGIN CERTIFICATE' not in ssl_cert_file:
+      log.msg('APNSClientContextFactory ssl_cert_file=%s' % ssl_cert_file)
+    else:
+      log.msg('APNSClientContextFactory ssl_cert_file={FROM_STRING}')
     self.ctx = SSL.Context(SSL.SSLv3_METHOD)
     if 'BEGIN CERTIFICATE' in ssl_cert_file:
       cer = crypto.load_certificate(crypto.FILETYPE_PEM, ssl_cert_file)

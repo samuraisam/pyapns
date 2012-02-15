@@ -1,0 +1,41 @@
+version 0.4.0 - 2012-02-14
+==========================
+
+New:
+
+  * Client interface methods have more explicit arguments and now take an 
+    error callback.
+
+    The `provision` `notify` and `feedback` methods in v0.3.2 would
+    implicitly assume they should perform asynchronously if the `callback`
+    argument was supplied. They would spin off a thread, later calling
+    the callback.
+
+    Now those methods take an `async` parameter, when True, will spin off
+    the XML-RPC request in another thread, calling `callback(result)` when
+    complete or `errback(exception)` if an error occurred.
+
+  * Clients will now automatically try to re-provision themselves if `INITIAL`
+    was provided during configuration. This helps, in case the server goes
+    down, to be able to retry provisioning at least once.
+
+Fixed bugs:
+
+  * Fixed #21 - logging of full contents of file PEM file when providing the 
+    whole thing in `provision()`
+
+  * Fixed #25 - provide a wrapper for api functions which will automaticaly 
+    try to reprovision should it encounter a `UknownAppID`.
+
+Other:
+
+  * Removed some of the redundant documentation from the setup.py file. 
+    Eventually I want to move to sphynx docs. That software didn't really 
+    exist in the same capacity in 2010 as it does now.
+
+version 0.3.2 - 2010-08-05
+==========================
+
+Started tracking changes. This is the version that everyone has been using for
+the past few years. 
+
