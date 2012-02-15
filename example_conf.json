@@ -1,0 +1,41 @@
+{
+	"port": 7077,
+	"autoprovision": [
+		{
+			"app_id": "sandbox:com.ficture.ficturebeta",
+			"cert": "/Users/sam/dev/ficture/push_certs/development-com.ficture.ficturebeta.pem",
+			"environment": "sandbox",
+			"timeout": 15
+		},
+		{
+			"app_id": "production:com.ficture.ficturebeta",
+			"cert": "/Users/sam/dev/ficture/push_certs/production-com.ficture.ficturebeta.pem",
+			"environment": "production",
+			"timeout": 15
+		},
+		{
+			"app_id": "sandbox:com.ficture.ficturebeta2",
+			"cert": "/Users/sam/dev/ficture/push_certs/development-com.ficture.ficturebeta2.pem",
+			"environment": "sandbox",
+			"timeout": 15
+		},
+		{
+			"app_id": "production:com.ficture.ficturebeta2",
+			"cert": "/Users/sam/dev/ficture/push_certs/production-com.ficture.ficturebeta2.pem",
+			"environment": "production",
+			"timeout": 15
+		},
+		{
+			"app_id": "sandbox:com.ficture.ficturebeta3",
+			"cert": "/Users/sam/dev/ficture/push_certs/development-com.ficture.ficturebeta3.pem",
+			"environment": "sandbox",
+			"timeout": 15
+		},
+		{
+			"app_id": "production:com.ficture.ficturebeta3",
+			"cert": "/Users/sam/dev/ficture/push_certs/production-com.ficture.ficturebeta3.pem",
+			"environment": "production",
+			"timeout": 15
+		}
+	]
+}
