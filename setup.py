@@ -44,7 +44,7 @@ setup(
   name="pyapns",
   version="0.4.0",
   description="A universal Apple Push Notification Service (APNS) provider.",
-  long_description=DOC
+  long_description=DOC,
   author="Samuel Sutch",
   author_email="samuraiblog@gmail.com",
   license="MIT",
