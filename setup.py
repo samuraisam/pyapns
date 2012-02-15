@@ -22,7 +22,7 @@ install `python-epoll`_ for best performance (if epoll is not available, like on
 Mac OS X, you may want to use another library, like `py-kqueue`_. If you like 
 easy_install try (it should take care of the dependancies for you)::
 
-    $ sudo easy_install pyapns
+    $ sudo pip install pyapns
 
 pyapns is a service that runs persistently on your machine. To start it::
 
