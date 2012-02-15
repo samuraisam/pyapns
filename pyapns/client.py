@@ -1,6 +1,7 @@
 import xmlrpclib
 import threading
 import httplib
+import functools
 from sys import hexversion
 
 OPTIONS = {'CONFIGURED': False, 'TIMEOUT': 20}
@@ -40,32 +41,76 @@ def configure(opts):
 class UnknownAppID(Exception): pass
 class APNSNotConfigured(Exception): pass
 
+def reprovision_and_retry(func):
+  """
+  Wraps the `errback` callback of the API functions, automatically trying to
+  re-provision if the app ID can not be found during the operation. If that's
+  unsuccessful, it will raise the UnknownAppID error.
+  """
+  @functools.wraps(func)
+  def wrapper(*a, **kw):
+    errback = kw.get('errback', None)
+    if errback is None:
+      def errback(e):
+        raise e
+    def errback_wrapper(e):
+      if isinstance(e, UnknownAppID) and 'INITIAL' in OPTIONS:
+        try:
+          for initial in OPTIONS['INITIAL']:
+            provision(*initial) # retry provisioning the initial setup
+          func(*a, **kw) # and try the function once more
+        except Exception, new_exc:
+          errback(new_exc) # throwing the new exception
+      else:
+        errback(e) # not an instance of UnknownAppID - nothing we can do here
+    kw['errback'] = errback_wrapper
+    return func(*a, **kw)
+  return wrapper
 
-def provision(app_id, path_to_cert, environment, timeout=15, callback=None):
+def default_callback(func):
+  @functools.wraps(func)
+  def wrapper(*a, **kw):
+    if 'callback' not in kw:
+      kw['callback'] = lambda c: c
+    return func(*a, **kw)
+  return wrapper
+
+@default_callback
+@reprovision_and_retry
+def provision(app_id, path_to_cert, environment, timeout=15, async=False, 
+              callback=None, errback=None):
   args = [app_id, path_to_cert, environment, timeout]
-  if callback is None:
-    return _xmlrpc_thread('provision', args, lambda r: r)
-  t = threading.Thread(target=_xmlrpc_thread, args=['provision', args, callback])
+  f_args = ['provision', args, callback, errback]
+  if not async:
+    return _xmlrpc_thread(*f_args)
+  t = threading.Thread(target=_xmlrpc_thread, args=f_args)
   t.daemon = True
   t.start()
 
-def notify(app_id, tokens, notifications, callback=None):
+@default_callback
+@reprovision_and_retry
+def notify(app_id, tokens, notifications, async=False, callback=None, 
+           errback=None):
   args = [app_id, tokens, notifications]
-  if callback is None:
-    return _xmlrpc_thread('notify', args, lambda r: r)
-  t = threading.Thread(target=_xmlrpc_thread, args=['notify', args, callback])
+  f_args = ['notify', args, callback, errback]
+  if not async:
+    return _xmlrpc_thread(*f_args)
+  t = threading.Thread(target=_xmlrpc_thread, args=f_args)
   t.daemon = True
   t.start()
 
-def feedback(app_id, callback=None):
+@default_callback
+@reprovision_and_retry
+def feedback(app_id, async=False, callback=None, errback=None):
   args = [app_id]
-  if callback is None:
-    return _xmlrpc_thread('feedback', args, lambda r: r)
-  t = threading.Thread(target=_xmlrpc_thread, args=['feedback', args, callback])
+  f_args = ['feedback', args, callback, errback]
+  if not async:
+    return _xmlrpc_thread(*f_args)
+  t = threading.Thread(target=_xmlrpc_thread, args=f_args)
   t.daemon = True
   t.start()
 
-def _xmlrpc_thread(method, args, callback):
+def _xmlrpc_thread(method, args, callback, errback=None):
   if not configure({}):
     raise APNSNotConfigured('APNS Has not been configured.')
   proxy = ServerProxy(OPTIONS['HOST'], allow_none=True, use_datetime=True,
@@ -77,8 +122,11 @@ def _xmlrpc_thread(method, args, callback):
     return callback(proxy(*args))
   except xmlrpclib.Fault, e:
     if e.faultCode == 404:
-      raise UnknownAppID
-    raise
+      e = UnknownAppID()
+    if errback is not None:
+      errback(e)
+    else:
+      raise e
 
 
 ## --------------------------------------------------------------
