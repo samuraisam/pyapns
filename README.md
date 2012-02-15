@@ -115,11 +115,11 @@ Configuring for pylons is just as simple, but automatic provisioning isn't possi
 
 For explanations of the configuration variables see the docs for `pyapns.client.configure`.
 
-Each of these functions can be called synchronously and asynchronously. To make them perform asynchronously simply supply a callback. The request will then be made in another thread and your callback will be executed with the results. When calling asynchronously no value will be returned:
+Each of these functions can be called synchronously and asynchronously. To make them perform asynchronously simply supply a callback and pass `async=True` to the function. The request will then be made in another thread and your callback will be executed with the results. When calling asynchronously no value will be returned:
 
     def got_feedback(tuples):
       trim_inactive_tokens(tuples)
-    feedback('myapp', callback=got_feedback)
+    feedback('myapp', async=True, callback=got_feedback)
 
 ### `pyapns.client.configure(opts)`
 
