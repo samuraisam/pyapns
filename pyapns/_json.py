@@ -15,7 +15,7 @@ except AttributeError:
   except AttributeError:
     raise ImportError('Could not load an apropriate JSON library '
                       'currently supported are simplejson, '
-                      'python2.6 json and python-json')
+                      'python2.6+ json and python-json')
 
 loads = json.loads
 dumps = json.dumps
