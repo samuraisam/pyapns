@@ -149,7 +149,11 @@ Each of these functions can be called synchronously and asynchronously. To make 
         environment            either 'sandbox' or 'production'
         timeout                number of seconds to timeout connection
                                attempts to the APPLE APS SERVER
-        callback               a callback to be executed when done
+        async                  pass something truthy to execute the request in a 
+                               background thread
+        callback               a function to be executed with the result
+        errback                a function to be executed with the error in case of an error
+
     Returns:
         None
 
@@ -163,8 +167,12 @@ Each of these functions can be called synchronously and asynchronously. To make 
         app_id                 provisioned app_id to send to
         tokens                 token to send the notification or a 
                                list of tokens
-        notifications          notification dicts or a list of notifications
-        callback               a callback to be executed when done
+        notifications          notification dict or a list of notification dicts
+        async                  pass something truthy to execute the request in a 
+                               background thread
+        callback               a function to be executed with the result when done
+        errback                a function to be executed with the error in case of an error
+
       Returns:
           None
 
@@ -175,8 +183,15 @@ Each of these functions can be called synchronously and asynchronously. To make 
     
     Arguments:
         app_id                 the app_id to query
+        async                  pass something truthy to execute the request in 
+                               a background thread
+        callback               a function to be executed with the result when 
+                               feedbacks are done fetching
+        errback                a function to be executed with the error if there
+                               is one during the request
+
     Returns:
-        Feedback tuples like [(datetime_expired, token_str), ...]
+        List of feedback tuples like [(datetime_expired, token_str), ...]
 
 
 ## The Ruby API
