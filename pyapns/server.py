@@ -50,7 +50,10 @@ class IAPNSService(Interface):
 
 class APNSClientContextFactory(ClientContextFactory):
   def __init__(self, ssl_cert_file):
-    log.msg('APNSClientContextFactory ssl_cert_file=%s' % ssl_cert_file)
+    if 'BEGIN CERTIFICATE' not in ssl_cert_file:
+      log.msg('APNSClientContextFactory ssl_cert_file=%s' % ssl_cert_file)
+    else:
+      log.msg('APNSClientContextFactory ssl_cert_file={FROM_STRING}')
     self.ctx = SSL.Context(SSL.SSLv3_METHOD)
     if 'BEGIN CERTIFICATE' in ssl_cert_file:
       cer = crypto.load_certificate(crypto.FILETYPE_PEM, ssl_cert_file)
