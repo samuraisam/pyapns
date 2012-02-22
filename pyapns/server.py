@@ -244,6 +244,7 @@ class APNSServer(xmlrpc.XMLRPC):
     self.allowNone = True
     self.app_ids = app_ids
     self.useDateTime = True
+    xmlrpc.XMLRPC.__init__(self)
   
   def apns_service(self, app_id):
     if app_id not in app_ids:
@@ -283,7 +284,6 @@ class APNSServer(xmlrpc.XMLRPC):
       Returns:
           None
     """
-    
     d = self.apns_service(app_id).write(
       encode_notifications(
         [t.replace(' ', '') for t in token_or_token_list] 
