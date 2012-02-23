@@ -241,10 +241,12 @@ class APNSService(service.Service):
 
 class APNSServer(xmlrpc.XMLRPC):
   def __init__(self):
-    self.allowNone = True
+    # self.allowNone = True
+    # self.allow_none = True
     self.app_ids = app_ids
+    self.use_date_time = True
     self.useDateTime = True
-    xmlrpc.XMLRPC.__init__(self)
+    xmlrpc.XMLRPC.__init__(self, allow_none=True)
   
   def apns_service(self, app_id):
     if app_id not in app_ids:
@@ -270,7 +272,9 @@ class APNSServer(xmlrpc.XMLRPC):
                               'environments are `sandbox` and `production`' % (
                               environment,))
     if not app_id in self.app_ids:
+      # log.msg('provisioning ' + app_id + ' environment ' + environment)
       self.app_ids[app_id] = APNSService(path_to_cert_or_cert, environment, timeout)
+    return 'provisioned'
   
   def xmlrpc_notify(self, app_id, token_or_token_list, aps_dict_or_list):
     """ Sends push notifications to the Apple APNS server. Multiple 
@@ -297,7 +301,7 @@ class APNSServer(xmlrpc.XMLRPC):
         # that are made unsuccessfully, which twisted will try endlessly
         # to reconnect to, we timeout and notifify the client
         raise xmlrpc.Fault(500, 'Connection to the APNS server could not be made.')
-      return d.addCallbacks(lambda r: None, _finish_err)
+      return d.addCallbacks(lambda r: 'sent', _finish_err)
   
   def xmlrpc_feedback(self, app_id):
     """ Queries the Apple APNS feedback server for inactive app tokens. Returns
