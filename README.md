@@ -199,6 +199,8 @@ Each of these functions can be called synchronously and asynchronously. To make 
 ###PYAPNS::Client
 There's python in my ruby!
 
+The ruby gem can be installed from [here](https://github.com/krasio/pyapns_gem)
+
 This is a class used to send notifications, provision applications and
 retrieve feedback using the Apple Push Notification Service.
 
