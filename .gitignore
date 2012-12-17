@@ -8,3 +8,5 @@ build/**
 *.pyc
 *.egg-info
 dist/**
+.idea
+atlassian-ide-plugin.xml
