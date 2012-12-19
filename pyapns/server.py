@@ -327,7 +327,7 @@ def encode_notifications(tokens, notifications):
   if type(notifications) is dict and type(tokens) in (str, unicode):
     tokens, notifications = ([tokens], [notifications])
   if type(notifications) is list and type(tokens) is list:
-    return ''.join(map(lambda y: structify(*y), ((binaryify(t), json.dumps(p, separators=(',',':')))
+    return ''.join(map(lambda y: structify(*y), ((binaryify(t), json.dumps(p, separators=(',',':'), ensure_ascii=False).encode('utf-8'))
                                     for t, p in zip(tokens, notifications))))
 
 def decode_feedback(binary_tuples):
