@@ -361,7 +361,7 @@ class APNSInterface(object):
       return self.le_id
     tokens = tokens if type(tokens) is list else [tokens]
     notifications = notifications if type(notifications) is list else [notifications]
-    self.notify2(app_id, tokens, notifications,
+    d = self.notify2(app_id, tokens, notifications,
         [self.distant_future]*len(tokens), 
         [_le_next_id() for i in xrange(len(tokens))])
     return d
@@ -636,7 +636,7 @@ def encode_notifications2(tokens, notifications, expirys, identifiers, on_failur
     try:
       return t.decode('hex')
     except TypeError, e:
-      raise APNSEncodeError('token "%s" could not be decoded: %s' % (str(t), str(e))
+      raise APNSEncodeError('token "%s" could not be decoded: %s' % (str(t), str(e)))
   _list = lambda v: v if type(v) is list else [v]
   return NotificationString(
       ''.join(map(lambda y: structify(*y), (
