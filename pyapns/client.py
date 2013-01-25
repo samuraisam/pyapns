@@ -115,6 +115,23 @@ class Client(object):
 
     def feedback(self, app_id, environment):
         """
+        Gets the from the APN feedback service. These are tokens that 
+        Apple considers to be "dead" - that you should no longer attempt
+        to deliver to.
+
+        Returns a list of dictionaries with the keys:
+
+            * `timestamp` - the UTC timestamp when Apple determined the
+               token to be dead
+            * `token` - the hexlified version of the token
+
+        :param app_id: Which app id to use
+        :type app_id: string
+
+        :param environmenet: The environment for the app_id
+        :type environment: string
+
+        :rtrype: list
         """
         status, feedbacks = self._request(
             'GET', 'apps/{}/{}/feedback'.format(app_id, environment)
@@ -129,6 +146,14 @@ class Client(object):
         recorded by pyapns. Each time apple severs the connection with 
         pyapns it will try to send back an error packet describing which
         notification caused the error and the error that occurred.
+
+        :param app_id: Which app id to use
+        :type app_id: string
+
+        :param environmenet: The environment for the app_id
+        :type environment: string
+
+        :rtype: list
         """
         status, disconnects = self._request(
             'GET', 'apps/{}/{}/disconnections'.format(app_id, environment)
