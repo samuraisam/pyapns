@@ -1,6 +1,6 @@
 try:
     try:
-        import usjon # try for ujson first because it rocks and is fast as hell
+        import ujson # try for ujson first because it rocks and is fast as hell
         json = ujson
     except ImportError:
         import json
