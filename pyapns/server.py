@@ -354,7 +354,7 @@ def decode_feedback(binary_tuples):
     fmt = '!lh32s'
     size = struct.calcsize(fmt)
     with StringIO(binary_tuples) as f:
-        return [(datetime.datetime.fromtimestamp(ts), binascii.hexlify(tok))
+        return [(datetime.datetime.utcfromtimestamp(ts), binascii.hexlify(tok))
                 for ts, toklen, tok in (struct.unpack(fmt, tup)
                 for tup in iter(lambda: f.read(size), ''))]
 
