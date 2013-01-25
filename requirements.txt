@@ -1,2 +1,2 @@
-Twisted>=8.2.0
+Twisted>=11.0.0
 pyOpenSSL>=0.10
