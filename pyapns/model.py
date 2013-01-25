@@ -108,7 +108,6 @@ class App(object):
         d = self.connection.read()
         def decode(raw_feedback):
             feedbacks = decode_feedback(raw_feedback)
-            print 'feedbacks', feedbacks
             return [{'type': 'feedback',
                      'timestamp': (
                         float(calendar.timegm(ts.timetuple())) 
