@@ -39,6 +39,9 @@ Fixed Bugs:
     reprovisioning, the reason @mikeytrw wanted the feature was to replace
     certs, which is now possible.
 
+  * Fixed #28 - sending multiple notifications after a disconnect fails - 
+    simply fixed the way the deferred was handeled
+
 version 0.4.0 - 2012-02-14
 ==========================
 
