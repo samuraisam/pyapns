@@ -109,7 +109,8 @@ class App(object):
         def decode(raw_feedback):
             feedbacks = decode_feedback(raw_feedback)
             print 'feedbacks', feedbacks
-            return [{'timestamp': (
+            return [{'type': 'feedback',
+                     'timestamp': (
                         float(calendar.timegm(ts.timetuple())) 
                         + float(ts.microsecond) / 1e6
                      ),
@@ -270,6 +271,7 @@ class DisconnectionEvent(object):
 
     def to_simple(self):
         return {
+            'type': 'disconnection',
             'code': self.code,
             'internal_identifier': self.identifier,
             'offending_notification': (
