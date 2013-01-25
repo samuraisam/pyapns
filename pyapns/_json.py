@@ -1,5 +1,9 @@
 try:
-    import json
+    try:
+        import usjon # try for ujson first because it rocks and is fast as hell
+        json = ujson
+    except ImportError:
+        import json
 except (ImportError, NameError):
     try:
         from django.utils import simplejson as json
