@@ -106,12 +106,14 @@ class App(object):
         d = self.connection.read()
         def decode(raw_feedback):
             feedbacks = decode_feedback(raw_feedback)
-            return [{'type': 'feedback',
-                     'timestamp': (
+            return [
+                {
+                    'type': 'feedback',
+                    'timestamp': (
                         float(calendar.timegm(ts.timetuple())) 
                         + float(ts.microsecond) / 1e6
-                     ),
-                     'token': tok
+                    ),
+                    'token': tok
                 } for ts, tok in feedbacks]
         d.addCallback(decode)
         return d
@@ -185,22 +187,19 @@ class Notification(object):
         *  `identifier` is a unique id specific to this id. for this you
             may use a UUID--but we will generate our own internal ID to track
             it. The APN gateway only allows for this to be 4 bytes.
-
-            Identifier is actually optional--we'll generate one if not 
-            provided however then the disconnection log will be pretty much
-            useless.
         *  `expiry` is how long the notification should be retried for if
             for some reason the apple servers can not contact the device
     """
 
     __slots__ = ('token', 'payload', 'expiry', 'identifier', 'internal_identifier')
 
-    def __init__(self):
-        self.token = None
-        self.payload = None
-        self.expiry = None
-        self.identifier = None
-        self.internal_identifier = None
+    def __init__(self, token=None, payload=None, expiry=None, identifier=None, 
+                 internal_identifier=None):
+        self.token = token
+        self.payload = payload
+        self.expiry = expiry
+        self.identifier = identifier
+        self.internal_identifier = internal_identifier
 
     @classmethod
     def from_simple(cls, data, instance=None):
@@ -208,7 +207,7 @@ class Notification(object):
         note.token = data['token']
         note.payload = data['payload']
         note.expiry = int(data['expiry'])
-        note.identifier = int(data['identifier'])
+        note.identifier = data['identifier']
         return note
 
     def to_simple(self):
@@ -239,7 +238,7 @@ class Notification(object):
 
     def __repr__(self):
         return u'<Notification token={} identifier={} expiry={} payload={}>'.format(
-            self.token, self.internal_identifier, self.expiry, self.payload
+            self.token, self.identifier, self.expiry, self.payload
         )
 
 
@@ -281,6 +280,17 @@ class DisconnectionEvent(object):
             ),
             'verbose_message': APNS_STATUS_CODES[self.code]
         }
+
+    @classmethod
+    def from_simple(cls, data):
+        evt = cls()
+        evt.code = data['code']
+        evt.identifier = data['internal_identifier']
+        evt.timestamp = datetime.datetime.utcfromtimestamp(data['timestamp'])
+        if 'offending_notification' in data:
+            evt.offending_notification = \
+                Notification.from_simple(data['offending_notification'])
+        return evt
 
     @classmethod
     def from_apn_wire_format(cls, packet):

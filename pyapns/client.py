@@ -3,6 +3,161 @@ import threading
 import httplib
 import functools
 from sys import hexversion
+import requests
+from pyapns import _json as json
+from pyapns.model import Notification, DisconnectionEvent
+
+
+class ClientError(Exception):
+    def __init__(self, message, response):
+        super(ClientError, self).__init__(message)
+        self.message = message
+        self.response = response
+
+
+class Client(object):
+    @property
+    def connection(self):
+        con = getattr(self, '_connection', None)
+        if con is None:
+            con = self._connection = requests.Session()
+        return con
+
+    def __init__(self, host='http://localhost', port=8088, timeout=20):
+        self.host = host.strip('/')
+        self.port = port
+        self.timeout = timeout
+
+    def provision(self, app_id, environment, certificate, timeout=15):
+        """
+        Tells the pyapns server that we want set up an app to receive 
+        notifications from us.
+
+        :param app_id: An app id, you can use anything but it's
+        recommended to just use the bundle identifier used in your app.
+        :type app_id: string
+        
+        :param environment: Which environment are you using? This value
+        must be either "production" or "sandbox".
+        :type environment: string
+
+        :param certificate: A path to a encoded, password-free .pem file 
+        on the pyapns host. This must be a path local to the host! You 
+        can also read an entire .pem file in and send it in this value 
+        as well.
+        :type certificate: string
+
+        :returns: Dictionary-representation of the App record
+        :rtype: dict
+        """
+        status, resp = self._request(
+            'POST', 'apps/{}/{}'.format(app_id, environment),
+            data={'certificate': certificate, 'timeout': timeout}
+        )
+        if status != 201:
+            raise ClientError('Unable to provision app id', resp)
+        return resp['response'] 
+
+    def notify(self, app_id, environment, notifications):
+        """
+        Sends notifications to clients via the pyapns server. The 
+        `app_id` and `environment` must be previously provisioned 
+        values--either by using the :py:meth:`provision` method or 
+        having been bootstrapped on the server.
+
+        `notifications` is a list of notification dictionaries that all
+        must have the following keys:
+
+            *  `payload` is the actual notification dict to be jsonified
+            *  `token` is the hexlified device token you scraped from 
+                the client
+            *  `identifier` is a unique id specific to this id. for this 
+                you may use any value--pyapns will generate its own 
+                internal ID to track it. The APN gateway only allows for
+                this to be 4 bytes.
+            *  `expiry` is how long the notification should be retried 
+                for if for some reason the apple servers can not contact
+                the device
+
+        You can also construct a :py:class:`Notification` object--the
+        dict and class representations are interchangable here.
+
+        :param app_id: Which app id to use
+        :type app_id: string
+
+        :param environmenet: The environment for the app_id
+        :type environment: string
+
+        :param notifications: A list of notification dictionaries
+        (see the discussion above)
+        :type notifications: list
+
+        :returns: Empty response--this method doesn't return anything
+        :rtype: dict 
+        """
+        notes = []
+        for note in notifications:
+            if isinstance(note, dict):
+                notes.append(Notification.from_simple(note))
+            elif isinstance(note, Notification):
+                notes.append(note)
+            else:
+                raise ValueError('Unknown notification: {}'.format(repr(note)))
+        data = [n.to_simple() for n in notes]
+
+        status, resp = self._request(
+            'POST', 'apps/{}/{}/notifications'.format(app_id, environment), 
+            data=data
+        )
+        if status != 201:
+            raise ClientError('Could not send notifications', resp)
+        return resp['response']
+
+    def feedback(self, app_id, environment):
+        """
+        """
+        status, feedbacks = self._request(
+            'GET', 'apps/{}/{}/feedback'.format(app_id, environment)
+        )
+        if status != 200:
+            raise ClientError('Could not fetch feedbacks', resp)
+        return feedbacks['response']
+
+    def disconnections(self, app_id, environment):
+        """
+        Retrieves a list of the 5000 most recent disconnection events 
+        recorded by pyapns. Each time apple severs the connection with 
+        pyapns it will try to send back an error packet describing which
+        notification caused the error and the error that occurred.
+        """
+        status, disconnects = self._request(
+            'GET', 'apps/{}/{}/disconnections'.format(app_id, environment)
+        )
+        if status != 200:
+            raise ClientError('Could not retrieve disconnections')
+        ret = []
+        for evt in disconnects['response']:
+            ret.append(DisconnectionEvent.from_simple(evt))
+        return ret
+
+    def _request(self, method, path, args=None, data=None):
+        url = '{}:{}/{}'.format(self.host, self.port, path)
+        kwargs = {'timeout': self.timeout}
+        if args is not None:
+            kwargs['params'] = args
+        if data is not None:
+            kwargs['data'] = json.dumps(data)
+
+        func = getattr(self.connection, method.lower())
+        resp = func(url, **kwargs)
+        if resp.headers['content-type'].startswith('application/json'):
+            resp_data = json.loads(resp.content)
+        else:
+            resp_data = None
+        return resp.status_code, resp_data
+
+
+## OLD XML-RPC INTERFACE ------------------------------------------------------
 
 OPTIONS = {'CONFIGURED': False, 'TIMEOUT': 20}
 

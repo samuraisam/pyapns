@@ -161,7 +161,7 @@ class NotificationResource(AppEnvResourceBase):
         # returns a deferred but we're not making the client wait
         self.app.notify([Notification.from_simple(n) for n in notifications])
 
-        return json_response({}, request)
+        return json_response({}, request, 201)
 
 
 class DisconnectionLogResource(AppEnvResourceBase):
