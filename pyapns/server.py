@@ -229,6 +229,7 @@ class APNSService(service.Service):
             def got_protocol(p):
                 p.onFailureReceived = self.on_failure_received
                 p.sendMessage(notifications)
+                return p
 
             d.addCallback(got_protocol)
             d.addErrback(log_errback('apns-service-write'))
