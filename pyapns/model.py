@@ -33,8 +33,6 @@ class AppRegistry(object):
         cls.apps[name][environment] = app
         return app
 
-MAX_IDENT = 0xffff
-START_IDENT = 0x0
 
 class App(object):
     @property
