@@ -10,3 +10,5 @@ build/**
 dist/**
 .idea
 atlassian-ide-plugin.xml
+twistd.log
+twistd.pid
