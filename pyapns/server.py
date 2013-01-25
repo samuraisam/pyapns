@@ -72,6 +72,8 @@ class APNSClientContextFactory(ClientContextFactory):
 
 
 class APNSProtocol(Protocol):
+    onFailureReceived = None
+
     def connectionMade(self):
         log.msg('APNSProtocol connectionMade')
         self.factory.addClient(self)
@@ -79,6 +81,11 @@ class APNSProtocol(Protocol):
     def sendMessage(self, msg):
         log.msg('APNSProtocol sendMessage msg=%s' % binascii.hexlify(msg))
         return self.transport.write(msg)
+
+    def dataReceived(self, data):
+        log.msg('data received after sendMessage data=%s' % data)
+        if callable(self.onFailureReceived):
+            self.onFailureReceived(data)
 
     def connectionLost(self, reason):
         log.msg('APNSProtocol connectionLost')
@@ -138,10 +145,12 @@ class APNSClientFactory(ReconnectingClientFactory):
 
     def __init__(self):
         self.clientProtocol = None
+        self.onFailureReceived = None
         self.deferred = defer.Deferred()
         self.deferred.addErrback(log_errback('APNSClientFactory __init__'))
 
     def addClient(self, p):
+        p.onFailureReceived = self.onFailureReceived
         self.clientProtocol = p
         self.deferred.callback(p)
 
@@ -177,13 +186,14 @@ class APNSService(service.Service):
     clientProtocolFactory = APNSClientFactory
     feedbackProtocolFactory = APNSFeedbackClientFactory
 
-    def __init__(self, cert_path, environment, timeout=15):
+    def __init__(self, cert_path, environment, timeout=15, on_failure_received=lambda x:x):
         log.msg('APNSService __init__')
         self.factory = None
         self.environment = environment
         self.cert_path = cert_path
         self.raw_mode = False
         self.timeout = timeout
+        self.on_failure_received = on_failure_received
 
     def getContextFactory(self):
         return APNSClientContextFactory(self.cert_path)
@@ -196,6 +206,7 @@ class APNSService(service.Service):
                             if self.environment == 'sandbox'
                             else APNS_SERVER_HOSTNAME), APNS_SERVER_PORT)
             self.factory = self.clientProtocolFactory()
+            self.factory.onFailureReceived = self.on_failure_received
             context = self.getContextFactory()
             reactor.connectSSL(server, port, self.factory, context)
 
@@ -215,7 +226,11 @@ class APNSService(service.Service):
                     pass
                 return r
 
-            d.addCallback(lambda p: p.sendMessage(notifications))
+            def got_protocol(p):
+                p.onFailureReceived = self.on_failure_received
+                p.sendMessage(notifications)
+
+            d.addCallback(got_protocol)
             d.addErrback(log_errback('apns-service-write'))
             d.addBoth(cancel_timeout)
             return d
@@ -357,7 +372,6 @@ def decode_feedback(binary_tuples):
         return [(datetime.datetime.utcfromtimestamp(ts), binascii.hexlify(tok))
                 for ts, toklen, tok in (struct.unpack(fmt, tup)
                 for tup in iter(lambda: f.read(size), ''))]
-
 
 def log_errback(name):
     def _log_errback(err, *args):
