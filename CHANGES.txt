@@ -1,3 +1,44 @@
+version 0.5.0 - 2013-01-25
+==========================
+
+There is lots of new stuff here but this release is backwards compatible. The
+REST interface operates on a different default port and runs completey in 
+paralell with the XML-RPC one. That said, REST is the way forward and all new
+features will be added to that server.
+
+New:
+
+  * An all-new REST interface that simplifies access to pyapns's functionality.
+
+    The XML-RPC server will be depreciated over the coming years. Next year it
+    will be "depreciated" as in it will start giving off warnings and the year
+    after it will likely be entirely removed.
+
+  * REST interface uses Apple's new "enhanced" notification format which has 
+    the ability to send back errors in the event Apple severs the connection 
+    to pyapns (which can happen for a number of reasons).
+
+  * A disconnection log which will pair disconnection events with the 
+    notifications at fault. This will allow you to remove offending tokens
+    and notifications.
+
+  * The new Python client uses the very fine requests library which provides
+    several advantages over the old XML-RPC library principally: connection
+    keep-alive and reuse and connection pooling.
+
+Fixed Bugs:
+
+  * Fixed #31/#26 - Token blacklisting - we will not blacklist tokens as it's 
+    not the job of this daemon to persist that kind of state. We however now 
+    give you the tools to blacklist tokens should you wish to do so.
+
+  * Fixed #14 - Apple Dropping Connection - this can happen for any number
+    of reasons, by using the new REST service you can get an idea of why.
+
+  * Fixed #10 - reprovisioning - while this issue isn't specifically to allow
+    reprovisioning, the reason @mikeytrw wanted the feature was to replace
+    certs, which is now possible.
+
 version 0.4.0 - 2012-02-14
 ==========================
 
