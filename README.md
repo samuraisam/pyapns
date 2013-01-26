@@ -56,12 +56,13 @@ Before sending notifications to devices, you must first upload your certificate 
 You can upload the PEM and provision the app multiple ways:
 
  1. Send the PEM file directly when provisioning the apps. Just read the whole PEM file into memory and include it as the `certificate` key:
-     
+         ```sh
          $ curl -d '{"certificate": "$(cat /path/to/cert.pem)"}' $HOST:$PORT/apps/com.example.myid/production
-
+         ```
  2. Upload the PEM file ahead of time to the same server as the pyapns daemon and provide the path to the certificate as the `certificate` key:
-
+         ```sh
          $ curl -d '{"certificate": "/path/to/cert.pem"}' $HOST:$PORT/apps/com.example.myid/production
+         ```
 
 Notice above that we are including in the URL the app id desired as well as the environment desired. They are the last and 2nd-to-last elements of the path, respectively. So for this url the app id is _com.example.myid_ and the environment is _production_. Any time you access functionality specific to these apps you'll be accessing it as a subpath of this full path.
 
@@ -79,8 +80,8 @@ Returns a list of all provisioned apps
             "timeout": 15,
             "app_id": "my.app.id",
             "environment": "sandbox"
-        },
-    ]
+        }
+    ],
     "code": 200
 }
 ```
