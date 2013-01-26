@@ -113,12 +113,12 @@ Creates a newly provisioned app. You can POST multiple times to the same URL and
 ##### Example Response
 ```json
     {
-        'response': {
-            'type': 'app',
-            'certificate': '/path/to/cert.pem',
-            'timeout': 15,
-            'app_id': 'my.app.id',
-            'environment': 'sandbox'
+        "response": {
+            "type": "app",
+            "certificate": "/path/to/cert.pem",
+            "timeout": 15,
+            "app_id": "my.app.id",
+            "environment": "sandbox"
         },
         'code': 201
     }
