@@ -4,17 +4,70 @@ pyapns
 A universal Apple Push Notification Service (APNS) provider.
 
 Features:
-<ul>
-  <li>XML-RPC Based, works with any client in any language</li>
-  <li>Native Python API with Django and Pylons support</li>
-  <li>Native Ruby API with Rails/Rack support</li>
-  <li>Scalable, fast and easy to distribute behind a proxy</li>
-  <li>Based on Twisted</li>
-  <li>Multi-application and dual environment support</li>
-  <li>Simplified feedback interface</li>
-</ul>
 
-pyapns is an APNS provider that you install on your server and access through XML-RPC. To install you will need Python, [Twisted](http://pypi.python.org/pypi/Twisted) and [pyOpenSSL](http://pypi.python.org/pypi/pyOpenSSL). It's also recommended to install [python-epoll](http://pypi.python.org/pypi/python-epoll/) for best performance (if epoll is not available, like on Mac OS X, you may want to use another library, like [py-kqueue](http://pypi.python.org/pypi/py-kqueue/2.0.1)). If you like easy_install try (it should take care of the dependancies for you):
+  * **REST interface** so you can start sending notifications with any language immediately
+  * Native Python API included
+  * Scalable, fast and easy to distribute behind a proxy
+  * Multi-application and dual environment support
+  * Disconnection log interface which provides reasons for recent connection issues
+  * Supports the full suite of APN gateway functionality
+
+### Quick Start
+
+Install and start the daemon:
+
+    $ sudo easy_install pyapns
+    $ wget https://raw.github.com/samuraisam/pyapns/master/pyapns.tac
+    $ twistd -ny pyapns.tac 
+
+Provision an app and send a notification:
+
+    $ curl -d '{"certificate":"/path/to/certificate.pem"}'      \
+          http://localhost:8088/apps/com.example.app/sandbox
+
+    $ curl -d '{"token": "le_token",                            \
+                "payload": {"aps": {"alert": "Hello!"}},        \
+                "identifier": "xxx", "expiry": 0}'              \
+          http://localhost:8088/apps/com.example.app/sandbox/
+
+### About
+
+pyapns is a daemon that is installed on a server and designed to take the pain out of sending push notifications to Apple devices. Typically your applications you will have a thread that maintains an SSL socket to Apple. This can be error-prone, hard to maintain and plainly a burden your app servers should not have to deal with.
+
+Additionally, pyapns provides several features you just wouldn't get with other solutions such as the disconnection log which remembers which notifications and tokens caused disconnections with Apple - thus allowing your application layer to make decisions about whether or not th continue sending those types of notifications. This also works great as a debugging layer.
+
+pyapns supports sending notifications to multiple applications each with multiple environments. This is handy so you don't have to push around your APN certificates, just keep them all local to your pyapns installation.
+
+## The REST interface
+
+#### Provisioning An App
+
+#### Sending Notifications
+###### Identifiers and Expiry
+
+#### Retrieving Feedback
+
+#### Retrieving Disconnection Events
+
+### The Included Python API
+
+### Installing in Production
+
+To install in production, you will want a few things that aren't covered in the quickstart above:
+
+ 1. Automated provisioning of apps. This is supported when the pyapns server is started up.
+ 2. Install [python-epoll](http://pypi.python.org/pypi/python-epoll/) and [ujson](http://pypi.python.org/pypi/ujson) for dramatically improved performance
+ 3. (optional) start multiple instances behind a reverse proxy like HAProxy or Nginx
+
+#### Automated provisioning
+
+#### Production dependencies
+
+#### Example `supervisord` config
+
+#### Multiple instances behind a reverse proxy
+
+<!--pyapns is an APNS provider that you install on your server and access through XML-RPC. To install you will need Python, [Twisted](http://pypi.python.org/pypi/Twisted) and [pyOpenSSL](http://pypi.python.org/pypi/pyOpenSSL). It's also recommended to install [python-epoll](http://pypi.python.org/pypi/python-epoll/) for best performance (if epoll is not available, like on Mac OS X, you may want to use another library, like [py-kqueue](http://pypi.python.org/pypi/py-kqueue/2.0.1)). If you like easy_install try (it should take care of the dependancies for you):
 
     $ sudo easy_install pyapns
     
@@ -354,3 +407,4 @@ like so:
 
 These can be passed to `PYAPNS::Client#notify` the same as hashes
 
+-->
