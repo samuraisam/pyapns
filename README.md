@@ -70,34 +70,37 @@ Notice above that we are including in the URL the app id desired as well as the 
 Returns a list of all provisioned apps
 
 ##### Example Response
-
-    {
-        'response': [{
-            'type': 'app',
-            'certificate': '/path/to/cert.pem',
-            'timeout': 15,
-            'app_id': 'my.app.id',
-            'environment': 'sandbox'
-        }],
-        'code': 200
-    }
-
+```json
+{
+    "response": [
+        {
+            "type": "app",
+            "certificate": "/path/to/cert.pem",
+            "timeout": 15,
+            "app_id": "my.app.id",
+            "environment": "sandbox"
+        },
+    ]
+    "code": 200
+}
+```
 #### GET _/apps/:app_id/environment_
 
 Returns information about a provisioned app
 
 ##### Example Response
-
-    {
-        'response': {
-            'type': 'app',
-            'certificate': '/path/to/cert.pem',
-            'timeout': 15,
-            'app_id': 'my.app.id',
-            'environment': 'sandbox'
-        },
-        'code': 200
-    }
+```json
+{
+    "response": {
+        "type": "app",
+        "certificate": "/path/to/cert.pem",
+        "timeout": 15,
+        "app_id": "my.app.id",
+        "environment": "sandbox"
+    },
+    "code": 200
+}
+```
 
 #### POST _/apps/:app_id/:environment_
 
@@ -105,23 +108,23 @@ Creates a newly provisioned app. You can POST multiple times to the same URL and
 
 ###### Example Body:
 ```json
-    {
-        'certificate': 'certificate or path to certificate',
-        'timeout':     15
-    }
+{
+    "certificate": "certificate or path to certificate",
+    "timeout":     15
+}
 ```
 ##### Example Response
 ```json
-    {
-        "response": {
-            "type": "app",
-            "certificate": "/path/to/cert.pem",
-            "timeout": 15,
-            "app_id": "my.app.id",
-            "environment": "sandbox"
-        },
-        'code': 201
-    }
+{
+    "response": {
+        "type": "app",
+        "certificate": "/path/to/cert.pem",
+        "timeout": 15,
+        "app_id": "my.app.id",
+        "environment": "sandbox"
+    },
+    "code": 201
+}
 ```
 
 ### Sending Notifications
