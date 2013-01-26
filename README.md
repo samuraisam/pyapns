@@ -28,7 +28,7 @@ Provision an app and send a notification:
     $ curl -d '{"token": "le_token",                            \
                 "payload": {"aps": {"alert": "Hello!"}},        \
                 "identifier": "xxx", "expiry": 0}'              \
-          http://localhost:8088/apps/com.example.app/sandbox/
+          http://localhost:8088/apps/com.example.app/sandbox/notifications
 
 ### About
 
@@ -65,7 +65,7 @@ You can upload the PEM and provision the app multiple ways:
 
 Notice above that we are including in the URL the app id desired as well as the environment desired. They are the last and 2nd-to-last elements of the path, respectively. So for this url the app id is _com.example.myid_ and the environment is _production_. Any time you access functionality specific to these apps you'll be accessing it as a subpath of this full path.
 
-#### GET /apps
+#### GET _/apps_
 
 Returns a list of all provisioned apps
 
@@ -82,7 +82,7 @@ Returns a list of all provisioned apps
         'code': 200
     }
 
-#### GET /apps/:app_id/environment
+#### GET _/apps/:app_id/environment_
 
 Returns information about a provisioned app
 
@@ -104,14 +104,14 @@ Returns information about a provisioned app
 Creates a newly provisioned app. You can POST multiple times to the same URL and it will merely re-provision the app, taking into account the new certificate and timeout. There may be more config values to provision in the future.
 
 ###### Example Body:
- 
+```json
     {
         'certificate': 'certificate or path to certificate',
         'timeout':     15
     }
-
+```
 ##### Example Response
-
+```json
     {
         'response': {
             'type': 'app',
@@ -122,8 +122,9 @@ Creates a newly provisioned app. You can POST multiple times to the same URL and
         },
         'code': 201
     }
+```
 
-#### Sending Notifications
+### Sending Notifications
 ###### Identifiers and Expiry
 
 #### Retrieving Feedback
