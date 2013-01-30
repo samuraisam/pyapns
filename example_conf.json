@@ -7,6 +7,6 @@
 			"cert": "/path/to/cert.pem",
 			"environment": "sandbox",
 			"timeout": 15
-		},
+		}
 	]
 }
