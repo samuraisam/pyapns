@@ -1,7 +1,16 @@
 try:
     try:
         import ujson # try for ujson first because it rocks and is fast as hell
-        json = ujson
+        class ujsonWrapper(object):
+            def dumps(self, obj, *args, **kwargs):
+                # ujson dumps method doesn't have separators keyword argument
+                if 'separators' in kwargs:
+                    del kwargs['separators']
+                return ujson.dumps(obj, *args, **kwargs)
+
+            def loads(self, str, *args, **kwargs):
+                return ujson.loads(str, *args, **kwargs)
+        json = ujsonWrapper()
     except ImportError:
         import json
 except (ImportError, NameError):
