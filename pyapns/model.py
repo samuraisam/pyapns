@@ -232,7 +232,8 @@ class Notification(object):
                     'token "{}" could not be decoded: {}'.format(str(t), str(e)
                 ))
 
-        encoded_payload = json.dumps(self.payload, separators=(',', ':'))
+        encoded_payload = json.dumps(self.payload, separators=(',', ':'),
+                                     ensure_ascii=False).encode('utf-8')
         return structify(binaryify(self.token), self.internal_identifier, 
                          self.expiry, encoded_payload)
 
