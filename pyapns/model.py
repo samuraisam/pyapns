@@ -156,7 +156,7 @@ class App(object):
             if len(self.recent_notification_idents) >= self.recent_notifications_to_keep:
                 removed_ident = self.recent_notification_idents.popleft()
                 removed_note = self.recent_notifications.pop(removed_ident)
-                self.internal_idents.pop(removed_note.internal_ident)
+                self.internal_idents.pop(removed_note.internal_identifier)
 
             # create a new internal identifier and map the notification to it
             internal_ident = self.get_next_ident()
