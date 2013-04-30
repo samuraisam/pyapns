@@ -168,8 +168,10 @@ class DisconnectionLogResource(AppEnvResourceBase):
     isLeaf = True
 
     def render_GET(self, request):
-        return json_response([d.to_simple() for d in self.app.disconnections],
+        response = json_response([d.to_simple() for d in self.app.disconnections],
                              request)
+        self.app.disconnections.clear()
+        return response
 
 
 class FeedbackResource(AppEnvResourceBase):
