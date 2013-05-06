@@ -137,7 +137,7 @@ class Client(object):
             'GET', 'apps/{}/{}/feedback'.format(app_id, environment)
         )
         if status != 200:
-            raise ClientError('Could not fetch feedbacks', resp)
+            raise ClientError('Could not fetch feedbacks', feedbacks)
         return feedbacks['response']
 
     def disconnections(self, app_id, environment):
@@ -159,7 +159,7 @@ class Client(object):
             'GET', 'apps/{}/{}/disconnections'.format(app_id, environment)
         )
         if status != 200:
-            raise ClientError('Could not retrieve disconnections')
+            raise ClientError('Could not retrieve disconnections', disconnects)
         ret = []
         for evt in disconnects['response']:
             ret.append(DisconnectionEvent.from_simple(evt))
