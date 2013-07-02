@@ -1,4 +1,5 @@
 {
+    "host": "localhost",
 	"port": 7077,
 	"rest_port": 8088,
 	"autoprovision": [
