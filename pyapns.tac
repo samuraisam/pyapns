@@ -35,6 +35,11 @@ if 'autoprovision' in config:
 
 application = twisted.application.service.Application("pyapns application")
 
+if 'host' in config:
+    host = config['host']
+else:
+    host = ''
+
 # XML-RPC server support ------------------------------------------------------
 
 if 'port' in config:
@@ -47,7 +52,7 @@ resource.putChild('', xml_service)
 
 site = twisted.web.server.Site(resource)
 
-server = twisted.application.internet.TCPServer(port, site)
+server = twisted.application.internet.TCPServer(port, site, interface=host)
 server.setServiceParent(application)
 
 # rest service support --------------------------------------------------------
@@ -58,5 +63,5 @@ else:
 
 site = twisted.web.server.Site(pyapns.rest_service.default_resource)
 
-server = twisted.application.internet.TCPServer(rest_port, site)
+server = twisted.application.internet.TCPServer(rest_port, site, interface=host)
 server.setServiceParent(application)
