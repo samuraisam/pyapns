@@ -1,5 +1,9 @@
 {
     "host": "localhost",
+    "log_file_name": "pyapns.log",
+    "log_file_dir": ".",
+    "log_file_rotate_length": 1000000000,
+    "log_file_max_rotate": 10,
 	"port": 7077,
 	"rest_port": 8088,
 	"autoprovision": [
