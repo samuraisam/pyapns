@@ -60,5 +60,5 @@ setup(
     'Topic :: Software Development :: Libraries :: Python Modules'],
   packages=['pyapns'],
   package_data={},
-  install_requires=['Twisted>=8.2.0', 'pyOpenSSL>=0.10']
+  install_requires=['Twisted>=8.2.0', 'pyOpenSSL>=0.10', 'requests>=1.0']
 )
