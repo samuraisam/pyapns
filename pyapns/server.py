@@ -77,8 +77,6 @@ class APNSProtocol(Protocol):
     onFailureReceived = None
 
     def connectionMade(self):
-        self.transport.setTcpKeepAlive(True) # maintain the TCP connection
-        self.transport.setTcpNoDelay(False) # allow Nagle algorithm	
         log.msg('APNSProtocol connectionMade')
         self.factory.addClient(self)
 
