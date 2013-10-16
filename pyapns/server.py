@@ -23,7 +23,7 @@ FEEDBACK_SERVER_SANDBOX_HOSTNAME = "feedback.sandbox.push.apple.com"
 FEEDBACK_SERVER_HOSTNAME = "feedback.push.apple.com"
 FEEDBACK_SERVER_PORT = 2196
 FEEDBACK_SERVER_PORT = 2196
-MAX_CONNECTION_TIME = 3600
+MAX_CONNECTION_TIME = datetime.timedelta(minutes=60)
 
 app_ids = {}  # {'app_id': APNSService()}
 
@@ -205,7 +205,7 @@ class APNSService(service.Service):
         "Connect to the APNS service and send notifications"
 	if self.factory: 
             conn_time = datetime.datetime.now() - self.factory_connect_time
-            if (conn_time.microseconds + (conn_time.seconds + conn_time.days * 24 * 3600) * 10**6) / 10**6 > MAX_CONNECTION_TIME:
+            if conn_time > MAX_CONNECTION_TIME:
             	log.msg('APNSService write (disconnecting based on max connection time)')
                 self.factory.clientProtocol.transport.loseConnection()
                 self.factory = None
