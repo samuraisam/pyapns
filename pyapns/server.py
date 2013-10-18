@@ -22,6 +22,8 @@ APNS_SERVER_PORT = 2195
 FEEDBACK_SERVER_SANDBOX_HOSTNAME = "feedback.sandbox.push.apple.com"
 FEEDBACK_SERVER_HOSTNAME = "feedback.push.apple.com"
 FEEDBACK_SERVER_PORT = 2196
+FEEDBACK_SERVER_PORT = 2196
+MAX_CONNECTION_TIME = datetime.timedelta(minutes=60)
 
 app_ids = {}  # {'app_id': APNSService()}
 
@@ -189,6 +191,7 @@ class APNSService(service.Service):
     def __init__(self, cert_path, environment, timeout=15, on_failure_received=lambda x:x):
         log.msg('APNSService __init__')
         self.factory = None
+        self.factory_connect_time = None
         self.environment = environment
         self.cert_path = cert_path
         self.raw_mode = False
@@ -200,6 +203,13 @@ class APNSService(service.Service):
 
     def write(self, notifications):
         "Connect to the APNS service and send notifications"
+	if self.factory: 
+            conn_time = datetime.datetime.now() - self.factory_connect_time
+            if conn_time > MAX_CONNECTION_TIME:
+            	log.msg('APNSService write (disconnecting based on max connection time)')
+                self.factory.clientProtocol.transport.loseConnection()
+                self.factory = None
+
         if not self.factory:
             log.msg('APNSService write (connecting)')
             server, port = ((APNS_SERVER_SANDBOX_HOSTNAME
@@ -209,6 +219,7 @@ class APNSService(service.Service):
             self.factory.onFailureReceived = self.on_failure_received
             context = self.getContextFactory()
             reactor.connectSSL(server, port, self.factory, context)
+            self.factory_connect_time = datetime.datetime.now() 
 
         client = self.factory.clientProtocol
         if client:
