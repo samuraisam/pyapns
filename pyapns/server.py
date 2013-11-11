@@ -208,6 +208,7 @@ class APNSService(service.Service):
             if conn_time > MAX_CONNECTION_TIME:
             	log.msg('APNSService write (disconnecting based on max connection time)')
                 self.factory.clientProtocol.transport.loseConnection()
+                self.factory.stopTrying()
                 self.factory = None
 
         if not self.factory:
