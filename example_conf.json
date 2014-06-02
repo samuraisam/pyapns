@@ -1,40 +1,16 @@
 {
+    "host": "localhost",
+    "log_file_name": "pyapns.log",
+    "log_file_dir": ".",
+    "log_file_rotate_length": 1000000000,
+    "log_file_max_rotate": 10,
 	"port": 7077,
+	"rest_port": 8088,
 	"autoprovision": [
 		{
-			"app_id": "sandbox:com.ficture.ficturebeta",
-			"cert": "/Users/sam/dev/ficture/push_certs/development-com.ficture.ficturebeta.pem",
+			"app_id": "com.example.myapp",
+			"cert": "/path/to/cert.pem",
 			"environment": "sandbox",
-			"timeout": 15
-		},
-		{
-			"app_id": "production:com.ficture.ficturebeta",
-			"cert": "/Users/sam/dev/ficture/push_certs/production-com.ficture.ficturebeta.pem",
-			"environment": "production",
-			"timeout": 15
-		},
-		{
-			"app_id": "sandbox:com.ficture.ficturebeta2",
-			"cert": "/Users/sam/dev/ficture/push_certs/development-com.ficture.ficturebeta2.pem",
-			"environment": "sandbox",
-			"timeout": 15
-		},
-		{
-			"app_id": "production:com.ficture.ficturebeta2",
-			"cert": "/Users/sam/dev/ficture/push_certs/production-com.ficture.ficturebeta2.pem",
-			"environment": "production",
-			"timeout": 15
-		},
-		{
-			"app_id": "sandbox:com.ficture.ficturebeta3",
-			"cert": "/Users/sam/dev/ficture/push_certs/development-com.ficture.ficturebeta3.pem",
-			"environment": "sandbox",
-			"timeout": 15
-		},
-		{
-			"app_id": "production:com.ficture.ficturebeta3",
-			"cert": "/Users/sam/dev/ficture/push_certs/production-com.ficture.ficturebeta3.pem",
-			"environment": "production",
 			"timeout": 15
 		}
 	]
