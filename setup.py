@@ -42,7 +42,7 @@ A lot more documentation and the issue tracker can be found on the `github page
 
 setup(
   name="pyapns",
-  version="0.4.0",
+  version="0.4.1",
   description="A universal Apple Push Notification Service (APNS) provider.",
   long_description=DOC,
   author="Samuel Sutch",
