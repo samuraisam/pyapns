@@ -59,7 +59,7 @@ class APNSClientContextFactory(ClientContextFactory):
                 'APNSClientContextFactory ssl_cert_file=%s' % ssl_cert_file)
         else:
             log.msg('APNSClientContextFactory ssl_cert_file={FROM_STRING}')
-        self.ctx = SSL.Context(SSL.SSLv3_METHOD)
+        self.ctx = SSL.Context(SSL.TLSv1_METHOD)
         if 'BEGIN CERTIFICATE' in ssl_cert_file:
             cer = crypto.load_certificate(crypto.FILETYPE_PEM, ssl_cert_file)
             pkey = crypto.load_privatekey(crypto.FILETYPE_PEM, ssl_cert_file)
