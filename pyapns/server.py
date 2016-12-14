@@ -18,6 +18,8 @@ from twisted.web import xmlrpc
 from django_statsd.clients import statsd
 
 
+log.startLogging(open('/var/log/pyapns.log', 'w'))
+
 APNS_SERVER_SANDBOX_HOSTNAME = "gateway.sandbox.push.apple.com"
 APNS_SERVER_HOSTNAME = "gateway.push.apple.com"
 APNS_SERVER_PORT = 2195
@@ -321,6 +323,7 @@ class APNSServer(xmlrpc.XMLRPC):
         # request is a timeout, since APNS simply terminates connectons
         # that are made unsuccessfully, which twisted will try endlessly
         # to reconnect to, we timeout and notifify the client
+        log.err('Failure connecting to the APNS server.  exc_type: {}  |  error: {}'.format(type(r).__name__, str(r)))
         raise xmlrpc.Fault(500, 'Connection to the APNS server could not be made.')
       return d.addCallbacks(lambda r: None, _finish_err)
   
