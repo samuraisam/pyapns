@@ -15,6 +15,10 @@ from twisted.python import log
 from zope.interface import Interface, implements
 from twisted.web import xmlrpc
 
+from django_statsd.clients import statsd
+
+
+log.startLogging(open('/var/log/pyapns.log', 'w'))
 
 APNS_SERVER_SANDBOX_HOSTNAME = "gateway.sandbox.push.apple.com"
 APNS_SERVER_HOSTNAME = "gateway.push.apple.com"
@@ -49,34 +53,41 @@ class IAPNSService(Interface):
 
 
 class APNSClientContextFactory(ClientContextFactory):
+  
   def __init__(self, ssl_cert_file):
-    if 'BEGIN CERTIFICATE' not in ssl_cert_file:
-      log.msg('APNSClientContextFactory ssl_cert_file=%s' % ssl_cert_file)
-    else:
-      log.msg('APNSClientContextFactory ssl_cert_file={FROM_STRING}')
-    self.ctx = SSL.Context(SSL.TLSv1_METHOD)
-    if 'BEGIN CERTIFICATE' in ssl_cert_file:
-      cer = crypto.load_certificate(crypto.FILETYPE_PEM, ssl_cert_file)
-      pkey = crypto.load_privatekey(crypto.FILETYPE_PEM, ssl_cert_file)
-      self.ctx.use_certificate(cer)
-      self.ctx.use_privatekey(pkey)
-    else:
-      self.ctx.use_certificate_file(ssl_cert_file)
-      self.ctx.use_privatekey_file(ssl_cert_file)
+    with statsd.timer('pyapns.APNSClientContextFactory.init'):
+      
+      if 'BEGIN CERTIFICATE' not in ssl_cert_file:
+        log.msg('APNSClientContextFactory ssl_cert_file=%s' % ssl_cert_file)
+      else:
+        log.msg('APNSClientContextFactory ssl_cert_file={FROM_STRING}')
+      self.ctx = SSL.Context(SSL.TLSv1_METHOD)
+      if 'BEGIN CERTIFICATE' in ssl_cert_file:
+        cer = crypto.load_certificate(crypto.FILETYPE_PEM, ssl_cert_file)
+        pkey = crypto.load_privatekey(crypto.FILETYPE_PEM, ssl_cert_file)
+        self.ctx.use_certificate(cer)
+        self.ctx.use_privatekey(pkey)
+      else:
+        self.ctx.use_certificate_file(ssl_cert_file)
+        self.ctx.use_privatekey_file(ssl_cert_file)
   
   def getContext(self):
     return self.ctx
 
 
 class APNSProtocol(Protocol):
+  
+  @statsd.timer('pyapns.APNSProtocol.connectionMade')
   def connectionMade(self):
     log.msg('APNSProtocol connectionMade')
     self.factory.addClient(self)
   
+  @statsd.timer('pyapns.APNSProtocol.sendMessage')
   def sendMessage(self, msg):
     log.msg('APNSProtocol sendMessage msg=%s' % binascii.hexlify(msg))
     return self.transport.write(msg)
   
+  @statsd.timer('pyapns.APNSProtocol.connectionLost')
   def connectionLost(self, reason):
     log.msg('APNSProtocol connectionLost')
     self.factory.removeClient(self)
@@ -88,14 +99,17 @@ class APNSFeedbackHandler(LineReceiver):
   def connectionMade(self):
     log.msg('feedbackHandler connectionMade')
 
+  @statsd.timer('pyapns.APNSFeedbackHandler.rawDataReceived')
   def rawDataReceived(self, data):
     log.msg('feedbackHandler rawDataReceived %s' % binascii.hexlify(data))
     self.io.write(data)
   
+  @statsd.timer('pyapns.APNSFeedbackHandler.lineReceived')
   def lineReceived(self, data):
     log.msg('feedbackHandler lineReceived %s' % binascii.hexlify(data))
     self.io.write(data)
 
+  @statsd.timer('pyapns.APNSFeedbackHandler.connectionLost')
   def connectionLost(self, reason):
     log.msg('feedbackHandler connectionLost %s' % reason)
     self.deferred.callback(self.io.getvalue())
@@ -108,6 +122,7 @@ class APNSFeedbackClientFactory(ClientFactory):
   def __init__(self):
     self.deferred = defer.Deferred()
   
+  @statsd.timer('pyapns.APNSFeedbackClientFactory.buildProtocol')
   def buildProtocol(self, addr):
     p = self.protocol()
     p.factory = self
@@ -119,10 +134,12 @@ class APNSFeedbackClientFactory(ClientFactory):
   def startedConnecting(self, connector):
     log.msg('APNSFeedbackClientFactory startedConnecting')
   
+  @statsd.timer('pyapns.APNSFeedbackClientFactory.clientConnectionLost')
   def clientConnectionLost(self, connector, reason):
     log.msg('APNSFeedbackClientFactory clientConnectionLost reason=%s' % reason)
     ClientFactory.clientConnectionLost(self, connector, reason)
   
+  @statsd.timer('pyapns.APNSFeedbackClientFactory.clientConnectionFailed')
   def clientConnectionFailed(self, connector, reason):
     log.msg('APNSFeedbackClientFactory clientConnectionFailed reason=%s' % reason)
     ClientFactory.clientConnectionLost(self, connector, reason)
@@ -136,10 +153,12 @@ class APNSClientFactory(ReconnectingClientFactory):
     self.deferred = defer.Deferred()
     self.deferred.addErrback(log_errback('APNSClientFactory __init__'))
   
+  @statsd.timer('pyapns.APNSClientFactory.addClient')
   def addClient(self, p):
     self.clientProtocol = p
     self.deferred.callback(p)
   
+  @statsd.timer('pyapns.APNSClientFactory.removeClient')
   def removeClient(self, p):
     self.clientProtocol = None
     self.deferred = defer.Deferred()
@@ -148,16 +167,19 @@ class APNSClientFactory(ReconnectingClientFactory):
   def startedConnecting(self, connector):
     log.msg('APNSClientFactory startedConnecting')
   
+  @statsd.timer('pyapns.APNSClientFactory.buildProtocol')
   def buildProtocol(self, addr):
     self.resetDelay()
     p = self.protocol()
     p.factory = self
     return p
   
+  @statsd.timer('pyapns.APNSClientFactory.clientConnectionLost')
   def clientConnectionLost(self, connector, reason):
     log.msg('APNSClientFactory clientConnectionLost reason=%s' % reason)
     ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
   
+  @statsd.timer('pyapns.APNSClientFactory.clientConnectionFailed')
   def clientConnectionFailed(self, connector, reason):
     log.msg('APNSClientFactory clientConnectionFailed reason=%s' % reason)
     ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
@@ -183,6 +205,7 @@ class APNSService(service.Service):
   def getContextFactory(self):
     return APNSClientContextFactory(self.cert_path)
   
+  @statsd.timer('pyapns.APNSService.write')
   def write(self, notifications):
     "Connect to the APNS service and send notifications"
     if not self.factory:
@@ -212,6 +235,7 @@ class APNSService(service.Service):
       d.addBoth(cancel_timeout)
       return d
   
+  @statsd.timer('pyapns.APNSService.read')
   def read(self):
     "Connect to the feedback service and read all data."
     log.msg('APNSService read (connecting)')
@@ -251,6 +275,7 @@ class APNSServer(xmlrpc.XMLRPC):
       raise xmlrpc.Fault(404, 'The app_id specified has not been provisioned.')
     return self.app_ids[app_id]
   
+  @statsd.timer('pyapns.APNSServer.xmlrpc_provision')
   def xmlrpc_provision(self, app_id, path_to_cert_or_cert, environment, timeout=15):
     """ Starts an APNSService for the this app_id and keeps it running
     
@@ -273,6 +298,7 @@ class APNSServer(xmlrpc.XMLRPC):
       # log.msg('provisioning ' + app_id + ' environment ' + environment)
       self.app_ids[app_id] = APNSService(path_to_cert_or_cert, environment, timeout)
   
+  @statsd.timer('pyapns.APNSServer.xmlrpc_notify')
   def xmlrpc_notify(self, app_id, token_or_token_list, aps_dict_or_list):
     """ Sends push notifications to the Apple APNS server. Multiple 
     notifications can be sent by sending pairing the token/notification
@@ -297,9 +323,11 @@ class APNSServer(xmlrpc.XMLRPC):
         # request is a timeout, since APNS simply terminates connectons
         # that are made unsuccessfully, which twisted will try endlessly
         # to reconnect to, we timeout and notifify the client
+        log.err('Failure connecting to the APNS server.  exc_type: {}  |  error: {}'.format(type(r).__name__, str(r)))
         raise xmlrpc.Fault(500, 'Connection to the APNS server could not be made.')
       return d.addCallbacks(lambda r: None, _finish_err)
   
+  @statsd.timer('pyapns.APNSServer.xmlrpc_feedback')
   def xmlrpc_feedback(self, app_id):
     """ Queries the Apple APNS feedback server for inactive app tokens. Returns
     a list of tuples as (datetime_went_dark, token_str).
@@ -314,6 +342,7 @@ class APNSServer(xmlrpc.XMLRPC):
       lambda r: decode_feedback(r))
 
 
+@statsd.timer('pyapns.encode_notifications')
 def encode_notifications(tokens, notifications):
   """ Returns the encoded bytes of tokens and notifications
   
@@ -330,6 +359,7 @@ def encode_notifications(tokens, notifications):
     return ''.join(map(lambda y: structify(*y), ((binaryify(t), json.dumps(p, separators=(',',':'), ensure_ascii=False).encode('utf-8'))
                                     for t, p in zip(tokens, notifications))))
 
+@statsd.timer('pyapns.decode_feedback')
 def decode_feedback(binary_tuples):
   """ Returns a list of tuples in (datetime, token_str) format 
   
