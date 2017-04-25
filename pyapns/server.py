@@ -23,7 +23,20 @@ FEEDBACK_SERVER_SANDBOX_HOSTNAME = "feedback.sandbox.push.apple.com"
 FEEDBACK_SERVER_HOSTNAME = "feedback.push.apple.com"
 FEEDBACK_SERVER_PORT = 2196
 
+_log_level = "INFO"
+
+
 app_ids = {} # {'app_id': APNSService()}
+
+
+def set_log_level(level):
+    global _log_level
+    _log_level = level
+
+
+def log_msg(*args, **kwargs):
+    log_msg(*args, logLevel=_log_level, **kwargs)
+
 
 class StringIO(_StringIO):
   """Add context management protocol to StringIO
@@ -51,9 +64,9 @@ class IAPNSService(Interface):
 class APNSClientContextFactory(ClientContextFactory):
   def __init__(self, ssl_cert_file):
     if 'BEGIN CERTIFICATE' not in ssl_cert_file:
-      log.msg('APNSClientContextFactory ssl_cert_file=%s' % ssl_cert_file)
+      log_msg('APNSClientContextFactory ssl_cert_file=%s' % ssl_cert_file)
     else:
-      log.msg('APNSClientContextFactory ssl_cert_file={FROM_STRING}')
+      log_msg('APNSClientContextFactory ssl_cert_file={FROM_STRING}')
     self.ctx = SSL.Context(SSL.TLSv1_METHOD)
     if 'BEGIN CERTIFICATE' in ssl_cert_file:
       cer = crypto.load_certificate(crypto.FILETYPE_PEM, ssl_cert_file)
@@ -70,15 +83,15 @@ class APNSClientContextFactory(ClientContextFactory):
 
 class APNSProtocol(Protocol):
   def connectionMade(self):
-    log.msg('APNSProtocol connectionMade')
+    log_msg('APNSProtocol connectionMade')
     self.factory.addClient(self)
   
   def sendMessage(self, msg):
-    log.msg('APNSProtocol sendMessage msg=%s' % binascii.hexlify(msg))
+    log_msg('APNSProtocol sendMessage msg=%s' % binascii.hexlify(msg))
     return self.transport.write(msg)
   
   def connectionLost(self, reason):
-    log.msg('APNSProtocol connectionLost')
+    log_msg('APNSProtocol connectionLost')
     self.factory.removeClient(self)
 
 
@@ -86,18 +99,18 @@ class APNSFeedbackHandler(LineReceiver):
   MAX_LENGTH = 1024*1024
   
   def connectionMade(self):
-    log.msg('feedbackHandler connectionMade')
+    log_msg('feedbackHandler connectionMade')
 
   def rawDataReceived(self, data):
-    log.msg('feedbackHandler rawDataReceived %s' % binascii.hexlify(data))
+    log_msg('feedbackHandler rawDataReceived %s' % binascii.hexlify(data))
     self.io.write(data)
   
   def lineReceived(self, data):
-    log.msg('feedbackHandler lineReceived %s' % binascii.hexlify(data))
+    log_msg('feedbackHandler lineReceived %s' % binascii.hexlify(data))
     self.io.write(data)
 
   def connectionLost(self, reason):
-    log.msg('feedbackHandler connectionLost %s' % reason)
+    log_msg('feedbackHandler connectionLost %s' % reason)
     self.deferred.callback(self.io.getvalue())
     self.io.close()
 
@@ -117,14 +130,14 @@ class APNSFeedbackClientFactory(ClientFactory):
     return p
   
   def startedConnecting(self, connector):
-    log.msg('APNSFeedbackClientFactory startedConnecting')
+    log_msg('APNSFeedbackClientFactory startedConnecting')
   
   def clientConnectionLost(self, connector, reason):
-    log.msg('APNSFeedbackClientFactory clientConnectionLost reason=%s' % reason)
+    log_msg('APNSFeedbackClientFactory clientConnectionLost reason=%s' % reason)
     ClientFactory.clientConnectionLost(self, connector, reason)
   
   def clientConnectionFailed(self, connector, reason):
-    log.msg('APNSFeedbackClientFactory clientConnectionFailed reason=%s' % reason)
+    log_msg('APNSFeedbackClientFactory clientConnectionFailed reason=%s' % reason)
     ClientFactory.clientConnectionLost(self, connector, reason)
 
 
@@ -146,7 +159,7 @@ class APNSClientFactory(ReconnectingClientFactory):
     self.deferred.addErrback(log_errback('APNSClientFactory removeClient'))
   
   def startedConnecting(self, connector):
-    log.msg('APNSClientFactory startedConnecting')
+    log_msg('APNSClientFactory startedConnecting')
   
   def buildProtocol(self, addr):
     self.resetDelay()
@@ -155,11 +168,11 @@ class APNSClientFactory(ReconnectingClientFactory):
     return p
   
   def clientConnectionLost(self, connector, reason):
-    log.msg('APNSClientFactory clientConnectionLost reason=%s' % reason)
+    log_msg('APNSClientFactory clientConnectionLost reason=%s' % reason)
     ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
   
   def clientConnectionFailed(self, connector, reason):
-    log.msg('APNSClientFactory clientConnectionFailed reason=%s' % reason)
+    log_msg('APNSClientFactory clientConnectionFailed reason=%s' % reason)
     ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
 
 
@@ -173,7 +186,7 @@ class APNSService(service.Service):
   feedbackProtocolFactory = APNSFeedbackClientFactory
   
   def __init__(self, cert_path, environment, timeout=15):
-    log.msg('APNSService __init__')
+    log_msg('APNSService __init__')
     self.factory = None
     self.environment = environment
     self.cert_path = cert_path
@@ -186,7 +199,7 @@ class APNSService(service.Service):
   def write(self, notifications):
     "Connect to the APNS service and send notifications"
     if not self.factory:
-      log.msg('APNSService write (connecting)')
+      log_msg('APNSService write (connecting)')
       server, port = ((APNS_SERVER_SANDBOX_HOSTNAME 
                       if self.environment == 'sandbox'
                       else APNS_SERVER_HOSTNAME), APNS_SERVER_PORT)
@@ -214,7 +227,7 @@ class APNSService(service.Service):
   
   def read(self):
     "Connect to the feedback service and read all data."
-    log.msg('APNSService read (connecting)')
+    log_msg('APNSService read (connecting)')
     try:
       server, port = ((FEEDBACK_SERVER_SANDBOX_HOSTNAME 
                       if self.environment == 'sandbox'
@@ -270,7 +283,7 @@ class APNSServer(xmlrpc.XMLRPC):
                               'environments are `sandbox` and `production`' % (
                               environment,))
     if not app_id in self.app_ids:
-      # log.msg('provisioning ' + app_id + ' environment ' + environment)
+      # log_msg('provisioning ' + app_id + ' environment ' + environment)
       self.app_ids[app_id] = APNSService(path_to_cert_or_cert, environment, timeout)
   
   def xmlrpc_notify(self, app_id, token_or_token_list, aps_dict_or_list):
