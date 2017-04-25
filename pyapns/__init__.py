@@ -1,1 +1,1 @@
-from .client import notify, provision, feedback, configure__version__ = "0.4.0"__author__ = "Samuel Sutch"__license__ = "MIT"__copyright__ = "Copyrighit 2012 Samuel Sutch"
+from sys import hexversionif hexversion < 0x02070000:  from .client import notify, provision, feedback, configureelse:  from .client3 import notify, provision, feedback, configure__version__ = "0.4.0"__author__ = "Samuel Sutch"__license__ = "MIT"__copyright__ = "Copyrighit 2012 Samuel Sutch"

@@ -154,10 +154,11 @@ class TimeoutHTTPConnection(httplib.HTTPConnection):
   def connect(self):
     httplib.HTTPConnection.connect(self)
     self.sock.settimeout(self.timeout)
+
+if hexversion < 0x02070000:
+  class TimeoutHTTP(httplib.HTTP):
+    _connection_class = TimeoutHTTPConnection
   
-class TimeoutHTTP(httplib.HTTP):
-  _connection_class = TimeoutHTTPConnection
-  
-  def set_timeout(self, timeout):
-    self._conn.timeout = timeout
+    def set_timeout(self, timeout):
+      self._conn.timeout = timeout
   
